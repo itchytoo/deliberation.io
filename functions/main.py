@@ -3,9 +3,11 @@
 # Deploy with `firebase deploy`
 
 from firebase_functions import https_fn, firestore_fn
-from firebase_admin import initialize_app
+from firebase_admin import initialize_app, credentials
 
-initialize_app()
+cred = credentials.Certificate("serviceAccountKey.json")
+
+initialize_app(cred)
 
 
 @https_fn.on_request()
@@ -29,3 +31,23 @@ def addmessage(req: https_fn.Request) -> https_fn.Response:
 
     # Send back a message that we've successfully written the message
     return https_fn.Response(f"Message with ID {doc_ref.id} added.")
+
+@firestore_fn.on_document_created(document="messages/{pushId}")
+def makeuppercase(event: firestore_fn.Event[firestore_fn.DocumentSnapshot | None]) -> None:
+    """Listens for new documents to be added to /messages. If the document has
+    an "original" field, creates an "uppercase" field containg the contents of
+    "original" in upper case."""
+
+    # Get the value of "original" if it exists.
+    if event.data is None:
+        return
+    try:
+        original = event.data.get("original")
+    except KeyError:
+        # No "original" field, so do nothing.
+        return
+
+    # Set the "uppercase" field.
+    print(f"Uppercasing {event.params['pushId']}: {original}")
+    upper = original.upper()
+    event.data.reference.update({"uppercase": upper})
