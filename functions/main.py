@@ -3,7 +3,7 @@
 # Deploy with `firebase deploy`
 
 from firebase_functions import https_fn, firestore_fn
-from firebase_admin import initialize_app, credentials
+from firebase_admin import initialize_app, credentials, firestore
 
 cred = credentials.Certificate("serviceAccountKey.json")
 
@@ -28,13 +28,29 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
     print("topic not empty")
     firestore_client: google.cloud.firestore.Client = firestore.client()
     print("working")
-    
+
     # Push the new message into Cloud Firestore using the Firebase Admin SDK.
     _, doc_ref = firestore_client.collection("deliberations").add(
-        {"topic": data["text"]}
+        {"topic": data.args.get("text")}
     )
+
     # Send back a message that we've successfully written the message
-    # return https_fn.Response(f"Message with ID {doc_ref.id} added.")
-    # return make_response(
-    #     jsonify({"message": f"Topic with ID {doc_ref.id} added."}), 200
-    # )
+    # return return https_fn.Response(f"Message with ID {doc_ref.id} added.")
+
+
+@https_fn.on_request()
+def addmessage(req: https_fn.Request) -> https_fn.Response:
+    """Take the text parameter passed to this HTTP endpoint and insert it into
+    a new document in the messages collection."""
+    # Grab the text parameter.
+    original = req.args.get("text")
+    if original is None:
+        return https_fn.Response("No text parameter provided", status=400)
+
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+
+    # Push the new message into Cloud Firestore using the Firebase Admin SDK.
+    _, doc_ref = firestore_client.collection("messages").add({"original": original})
+
+    # Send back a message that we've successfully written the message
+    return https_fn.Response(f"Message with ID {doc_ref.id} added.")
