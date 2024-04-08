@@ -4,70 +4,40 @@
 
 from firebase_functions import https_fn, firestore_fn
 from firebase_admin import initialize_app, credentials, firestore
-
-cred = credentials.Certificate("serviceAccountKey.json")
-
-initialize_app(cred)
+from flask import jsonify
 
 
-@https_fn.on_request()
-def on_request_example(req: https_fn.Request) -> https_fn.Response:
-    return https_fn.Response("Hello world!")
+initialize_app()
 
 
 @https_fn.on_request()
 def createTopic(req: https_fn.Request) -> https_fn.Response:
-    """Take the JSON payload passed to this HTTP endpoint and insert it into
-    a new document in the messages collection."""
-    try:
-        data = req
-    except ValueError:
-        return https_fn.Response("Invalid JSON", status=400)
-    if not data:
-        return https_fn.Response("No topic information provided", status=400)
-    print("topic not empty")
-    firestore_client: google.cloud.firestore.Client = firestore.client()
-    print("working")
+    """Take the JSON object passed to this HTTP endpoint and insert it into
+    a new document in the messages collection. Expects a POST request."""
 
-    # Push the new message into Cloud Firestore using the Firebase Admin SDK.
-    _, doc_ref = firestore_client.collection("deliberations").add(
-        {"topic": data.args.get("text")}
+    # Parse JSON directly from request body
+    data = req.get_json()
+    required_keys = set(
+        [
+            "topic",
+            "description",
+            "startTime",
+            "endTime",
+            "aiModerationFeatures",
+            "seedViewpoints",
+            "creatorUserId",
+            "rounds",
+        ]
     )
-
-    # Send back a message that we've successfully written the message
-    # return return https_fn.Response(f"Message with ID {doc_ref.id} added.")
-
-
-@https_fn.on_request()
-def addmessage(req: https_fn.Request) -> https_fn.Response:
-    """Take the text parameter passed to this HTTP endpoint and insert it into
-    a new document in the messages collection."""
-    # Grab the text parameter.
-    original = req.args.get("text")
-    if original is None:
-        return https_fn.Response("No text parameter provided", status=400)
+    # Ensure the JSON object contains a 'topic' field
+    if set(list(data.keys())) != required_keys:
+        return https_fn.Response("Required keys missing in JSON object", status=400)
+    # data["aiModerationFeatures"] = req.args.getlist("aiModerationFeatures")
 
     firestore_client: google.cloud.firestore.Client = firestore.client()
 
-    # Push the new message into Cloud Firestore using the Firebase Admin SDK.
-    _, doc_ref = firestore_client.collection("messages").add({"original": original})
+    # Push the new document into Cloud Firestore using the Firebase Admin SDK.
+    _, doc_ref = firestore_client.collection("deliberations").add(data)
 
-    # Send back a message that we've successfully written the message
-    return https_fn.Response(f"Message with ID {doc_ref.id} added.")
-
-@https_fn.on_request()
-def createTopic2(req: https_fn.Request) -> https_fn.Response:
-    """Take the text parameter passed to this HTTP endpoint and insert it into
-    a new document in the messages collection."""
-    # Grab the text parameter.
-    original = req.args.get("text")
-    if original is None:
-        return https_fn.Response("No text parameter provided", status=400)
-
-    firestore_client: google.cloud.firestore.Client = firestore.client()
-
-    # Push the new message into Cloud Firestore using the Firebase Admin SDK.
-    _, doc_ref = firestore_client.collection("deliberations").add({"original": original})
-
-    # Send back a message that we've successfully written the message
-    return https_fn.Response(f"topic with ID {doc_ref.id} added.")
+    # Send back a message that we've successfully written the document
+    return https_fn.Response(f"Topic with ID {doc_ref.id} added.")
