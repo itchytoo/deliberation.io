@@ -25,17 +25,14 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         data = req.get_json()
         required_keys = set(
             [
-                "topic",
-                "aiModerationFeatures",
-                "seedViewpoints",
+                "topicName",
+                "yesSeeds",
+                "noSeeds",
             ]
         )
         # Ensure the JSON object contains a 'topic' field
         if set(list(data.keys())) != required_keys:
             return https_fn.Response("Required keys missing in JSON object", status=400)
-
-        # add the adminID field to the data
-        data["adminID"] = user_id
 
         # Initialize Firestore client
         firestore_client = firestore.client()
