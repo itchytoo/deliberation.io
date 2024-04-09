@@ -176,16 +176,13 @@ def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
         createdDeliberations = user_doc["createdDeliberations"]
 
         # retrieve the topic names of the created deliberations
-        createdTopicNames = []
+        topic_list = []
         for topic_id in createdDeliberations:
             topic_doc = firestore_client.collection("deliberations").document(topic_id).get().to_dict()
-            createdTopicNames.append(topic_doc["topic"])
+            topic_list.append({"deliberationID": topic_id, "topicName": topic_doc["topic"]})
 
         # send back a JSON object with the doc references and also the topic names
-        return https_fn.Response(json.dumps({
-            "createdDeliberations": createdDeliberations,
-            "createdTopicNames": createdTopicNames
-        }), content_type="application/json")
+        return https_fn.Response(json.dumps(topic_list), content_type="application/json")
 
     # catch any errors that occur during the process
     except auth.InvalidIdTokenError:
@@ -230,16 +227,13 @@ def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
         participatedDeliberations = user_doc["participatedDeliberations"]
 
         # retrieve the topic names of the created deliberations
-        participatedTopicNames = []
+        topic_list = []
         for topic_id in participatedDeliberations:
             topic_doc = firestore_client.collection("deliberations").document(topic_id).get().to_dict()
-            participatedTopicNames.append(topic_doc["topic"])
+            topic_list.append({"deliberationID": topic_id, "topicName": topic_doc["topic"]})
 
         # send back a JSON object with the doc references and also the topic names
-        return https_fn.Response(json.dumps({
-            "participatedDeliberations": participatedDeliberations,
-            "participatedTopicNames": participatedTopicNames
-        }), content_type="application/json")
+        return https_fn.Response(json.dumps(topic_list), content_type="application/json")
 
     # catch any errors that occur during the process
     except auth.InvalidIdTokenError:
