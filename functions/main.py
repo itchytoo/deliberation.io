@@ -315,7 +315,7 @@ def getRound1Information(req: https_fn.Request) -> https_fn.Response:
             or len(user_doc["participatedDeliberations"]) == 0
             or data["deliberationDocRef"] not in user_doc["participatedDeliberations"]
         ):
-            https_fn.Response(
+            return https_fn.Response(
                 "Seems like you don't have access to this deliberation. Sorry!",
                 status=401,
             )
