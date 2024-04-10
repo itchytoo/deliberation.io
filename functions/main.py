@@ -327,9 +327,29 @@ def getRound1Information(req: https_fn.Request) -> https_fn.Response:
             .get()
             .to_dict()
         )
+        seedYesTaglines = topic_doc["yes"]["taglines"]
+        seedNoTaglines = topic_doc["no"]["taglines"]
+        seedYesDescriptions = topic_doc["yes"]["descriptions"]
+        seedNoDescriptions = topic_doc["no"]["descriptions"]
+
+        yesSeedList = list()
+        noSeedList = list()
+        for tagline, description in zip(seedYesTaglines, seedYesDescriptions):
+            yesSeedList.append({"tagline": tagline, "description": description})
+
+        for tagline, description in zip(seedNoTaglines, seedNoDescriptions):
+            noSeedList.append({"tagline": tagline, "description": description})
+
+        massaged_doc = {
+            "topicName": topic_doc["topic"],
+            "yesSeeds": yesSeedList,
+            "noSeeds": noSeedList,
+        }
 
         # send back a JSON object with the doc references and also the topic names
-        return https_fn.Response(json.dumps(topic_doc), content_type="application/json")
+        return https_fn.Response(
+            json.dumps(massaged_doc), content_type="application/json"
+        )
 
     # catch any errors that occur during the process
     except auth.InvalidIdTokenError:
