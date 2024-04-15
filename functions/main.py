@@ -3,15 +3,19 @@ This file contains the main functions that are deployed to the Firebase Cloud Fu
 Authors: Chinmaya, Guinness
 """
 
-from firebase_functions import https_fn, firestore_fn
+from firebase_functions import https_fn, firestore_fn, options
 from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
 
 initialize_app()
 
+enableCors = options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
+        cors_methods=["get", "post"],
+    )
 
-@https_fn.on_request()
+@https_fn.on_request(cors=enableCors)
 def createTopic(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
     a new document in the messages collection. Expects a POST request."""
@@ -88,7 +92,7 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("No JWT token provided", status=401)
 
 
-@https_fn.on_request()
+@https_fn.on_request(cors=enableCors)
 def joinTopic(req: https_fn.Request) -> https_fn.Response:
     try:
         # authenticate the user
@@ -161,7 +165,7 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("No JWT token provided", status=401)
 
 
-@https_fn.on_request()
+@https_fn.on_request(cors=enableCors)
 def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
     try:
         # authenticate the user
@@ -224,7 +228,7 @@ def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("No JWT token provided", status=401)
 
 
-@https_fn.on_request()
+@https_fn.on_request(cors=enableCors)
 def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
     try:
         # authenticate the user
@@ -287,7 +291,7 @@ def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response("No JWT token provided", status=401)
 
 
-@https_fn.on_request()
+@https_fn.on_request(cors=enableCors)
 def getRound1Information(req: https_fn.Request) -> https_fn.Response:
     try:
         # authenticate the user
@@ -327,10 +331,10 @@ def getRound1Information(req: https_fn.Request) -> https_fn.Response:
             .get()
             .to_dict()
         )
-        seedYesTaglines = topic_doc["yes"]["taglines"]
-        seedNoTaglines = topic_doc["no"]["taglines"]
-        seedYesDescriptions = topic_doc["yes"]["descriptions"]
-        seedNoDescriptions = topic_doc["no"]["descriptions"]
+        seedYesTaglines = topic_doc["seedViewpoints"]["yes"]["taglines"]
+        seedNoTaglines = topic_doc["seedViewpoints"]["no"]["taglines"]
+        seedYesDescriptions = topic_doc["seedViewpoints"]["yes"]["descriptions"]
+        seedNoDescriptions = topic_doc["seedViewpoints"]["no"]["descriptions"]
 
         yesSeedList = list()
         noSeedList = list()
