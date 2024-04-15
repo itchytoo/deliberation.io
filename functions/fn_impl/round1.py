@@ -107,14 +107,13 @@ def saveComment(req: https_fn.Request) -> https_fn.Response:
         # Parse JSON directly from request body
         data = req.get_json()
         required_keys = set(
-            [
-                "deliberationDocRef"
-                "rawText",
-            ]
+            ["deliberationDocRef", "rawText"]
         )
+        
+        
         # Ensure the JSON object contains a 'topic' field
         if set(list(data.keys())) != required_keys:
-            return https_fn.Response("Required keys missing in JSON object", status=400)
+            return https_fn.Response(f"Current keys are {data.keys()}. Required keys missing in JSON object", status=400)
 
         # add the adminID field to the data
         data["adminID"] = user_id
