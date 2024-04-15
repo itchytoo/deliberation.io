@@ -7,6 +7,8 @@ Authors: Chinmaya, Guinness
 from fn_impl.home import *
 from fn_impl.createTopic import *
 from fn_impl.round1 import *
+from fn_impl.round2 import *
+
 
 # initialize the app
 initialize_app()
