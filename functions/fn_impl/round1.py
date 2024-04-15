@@ -117,14 +117,11 @@ def saveComment(req: https_fn.Request) -> https_fn.Response:
         if set(list(data.keys())) != required_keys:
             return https_fn.Response(f"Current keys are {data.keys()}. Required keys missing in JSON object", status=400)
 
-        # add the adminID field to the data
-        data["adminID"] = user_id
-
         # Initialize Firestore client
         firestore_client = firestore.client()
 
         # add the new deliberation to the collection
-        user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).get().to_dict()
+        user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(user_id).get().to_dict()
         if user_comment_doc is None:
             user_comment_doc = dict()
         if "comments" not in user_comment_doc.keys():
@@ -133,17 +130,82 @@ def saveComment(req: https_fn.Request) -> https_fn.Response:
 
         try: 
             # update the createdDeliberations field
-            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).update(
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(user_id).update(
                 user_comment_doc
             )
         except NotFound:
-            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).set(
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(user_id).set(
                 user_comment_doc
             )
 
 
         # Send back a message that we've successfully added the comment.
         return https_fn.Response(f"Comment successfully added.")
+
+    # Catch any errors that occur during the process
+    except auth.InvalidIdTokenError:
+        return https_fn.Response("Invalid JWT token", status=401)
+
+    except auth.ExpiredIdTokenError:
+        return https_fn.Response("Expired JWT token", status=401)
+
+    except auth.RevokedIdTokenError:
+        return https_fn.Response("Revoked JWT token", status=401)
+
+    except auth.CertificateFetchError:
+        return https_fn.Response(
+            "Error fetching the public key certificates", status=401
+        )
+
+    except auth.UserDisabledError:
+        return https_fn.Response("User is disabled", status=401)
+
+    except ValueError:
+        return https_fn.Response("No JWT token provided", status=401)
+
+@https_fn.on_request(cors=enableCors)
+def sendTopicVote(req: https_fn.Request) -> https_fn.Response:
+    try:
+        # authenticate the user
+        token = req.headers.get("Authorization").split("Bearer ")[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token["user_id"]
+
+        # Parse JSON directly from request body
+        data = req.get_json()
+        required_keys = set(
+            ["deliberationDocRef", "vote"]
+        )
+         
+        # Ensure the JSON object contains a 'topic' field
+        if set(list(data.keys())) != required_keys:
+            return https_fn.Response(f"Current keys are {data.keys()}. Required keys missing in JSON object", status=400)
+
+        # Initialize Firestore client
+        firestore_client = firestore.client()
+
+        # add the new deliberation to the collection
+        user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).get().to_dict()
+
+        if user_comment_doc is None:
+            user_comment_doc = dict()
+
+        user_comment_doc["topic"] = data["vote"]
+
+        try: 
+            # update the createdDeliberations field
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).update(
+                user_comment_doc
+            )
+
+        except NotFound:
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).set(
+                user_comment_doc
+            )
+
+
+        # Send back a message that we've successfully added the comment.
+        return https_fn.Response(f"vote successfully added.")
 
     # Catch any errors that occur during the process
     except auth.InvalidIdTokenError:

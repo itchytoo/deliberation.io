@@ -2,6 +2,7 @@ from firebase_functions import https_fn, firestore_fn, options
 from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
+from google.api_core.exceptions import NotFound
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
@@ -48,6 +49,80 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
         return https_fn.Response(
             json.dumps(comments_list), content_type="application/json"
         )
+
+    # Catch any errors that occur during the process
+    except auth.InvalidIdTokenError:
+        return https_fn.Response("Invalid JWT token", status=401)
+
+    except auth.ExpiredIdTokenError:
+        return https_fn.Response("Expired JWT token", status=401)
+
+    except auth.RevokedIdTokenError:
+        return https_fn.Response("Revoked JWT token", status=401)
+
+    except auth.CertificateFetchError:
+        return https_fn.Response(
+            "Error fetching the public key certificates", status=401
+        )
+
+    except auth.UserDisabledError:
+        return https_fn.Response("User is disabled", status=401)
+
+    except ValueError:
+        return https_fn.Response("No JWT token provided", status=401)
+
+@https_fn.on_request(cors=enableCors)
+def sendCommentVote(req: https_fn.Request) -> https_fn.Response:
+    try:
+        # authenticate the user
+        token = req.headers.get("Authorization").split("Bearer ")[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token["user_id"]
+
+        # Parse JSON directly from request body
+        data = req.get_json()
+        required_keys = set(
+            ["deliberationDocRef", "commentID", "vote"]
+        )
+         
+        # Ensure the JSON object contains a 'topic' field
+        if set(list(data.keys())) != required_keys:
+            return https_fn.Response(f"Current keys are {data.keys()}. Required keys missing in JSON object", status=400)
+
+        # extract the data from the JSON object
+        userID = data["commentID"]["userID"]
+        commentIndex = data["commentID"]["commentIndex"]
+        vote = data["vote"]
+
+        # Initialize Firestore client
+        firestore_client = firestore.client()
+
+        # add the new deliberation to the collection
+        user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).get().to_dict()
+
+        # if the user has not voted on any comments yet, create the field
+        if user_comment_doc is None:
+            user_comment_doc = dict()
+        if "comments" not in user_comment_doc.keys():
+            user_comment_doc["comments"] = dict()
+        if userID not in user_comment_doc["comments"].keys():
+            user_comment_doc["comments"][userID] = dict()
+        user_comment_doc["comments"][userID][str(commentIndex)] = vote
+
+        try: 
+            # update the createdDeliberations field
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).update(
+                user_comment_doc
+            )
+
+        except (NotFound, ValueError):
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).set(
+                user_comment_doc
+            )
+
+
+        # Send back a message that we've successfully added the comment.
+        return https_fn.Response(f"vote successfully added.")
 
     # Catch any errors that occur during the process
     except auth.InvalidIdTokenError:
