@@ -2,6 +2,8 @@ from firebase_functions import https_fn, firestore_fn, options
 from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
+from google.api_core.exceptions import NotFound
+
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
@@ -123,14 +125,21 @@ def saveComment(req: https_fn.Request) -> https_fn.Response:
 
         # add the new deliberation to the collection
         user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).get().to_dict()
+        if user_comment_doc is None:
+            user_comment_doc = dict()
         if "comments" not in user_comment_doc.keys():
             user_comment_doc["comments"] = list()
-        user_comment_doc.append(data["rawText"])
-    
-        # update the createdDeliberations field
-        firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).update(
-            user_comment_doc
-        )
+        user_comment_doc["comments"].append(data["rawText"])
+
+        try: 
+            # update the createdDeliberations field
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).update(
+                user_comment_doc
+            )
+        except NotFound:
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").document(data["adminID"]).set(
+                user_comment_doc
+            )
 
 
         # Send back a message that we've successfully added the comment.
