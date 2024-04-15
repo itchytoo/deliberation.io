@@ -16,6 +16,7 @@ OPTIONS = {
     "round2" : ["Raw comments, randomized", "Steelman arguments, randomized", "Raw comments, ordered", "Steelman arguments, ordered"],
     "round3" : ["Revote", "None"]
 }
+
 OPTIONAL_KEYS = set(["intervention", "round3"])
 
 @https_fn.on_request(cors=enableCors)
