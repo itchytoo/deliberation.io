@@ -48,9 +48,6 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         
         finalFlow, finalTimes = list(), list()
         for i, key in enumerate(list(OPTIONS.keys())):
-            # idx = OPTIONS[key].index(data["deliberationSettings"][key]["option"])
-            # if key in OPTIONAL_KEYS and idx == len(OPTIONS[key]) - 1:
-            #     idx = -1
             finalFlow.append(data["deliberationSettings"][key]["option"])
             finalTimes.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
 

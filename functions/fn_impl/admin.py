@@ -15,6 +15,8 @@ FORMATTED_OPTIONS = {
     "round3" : "Round 3"
 }
 
+STAGES = ["round1", "intervention", "round2", "round3"]
+
 @https_fn.on_request(cors=enableCors)
 def getStageInfo(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
@@ -45,7 +47,7 @@ def getStageInfo(req: https_fn.Request) -> https_fn.Response:
 
         # add the doc reference to the topic_drefs collection
         deliberationInfo = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).get().to_dict()
-        desiredStages = [val for val in deliberationInfo["delibFlow"] if val != "None"]
+        desiredStages = [stage for stage, choice in zip(STAGES, deliberationInfo["delibFlow"]) if choice != "None"]
         result = [
             {
                 "stageName" : FORMATTED_OPTIONS[key], 
