@@ -9,6 +9,15 @@ enableCors = options.CorsOptions(
     )
 
 
+NUM_OPTIONS = 5
+OPTIONS = {
+    "round1" : ["Seed", "No seed"],
+    "intervention" : ["Socratic dialogue", "Comment feedback", "Socratic dialogue and comment feedback", "None"],
+    "round2" : ["Raw comments", "Steelman arguments"],
+    "round3" : ["Revote", "None"]
+}
+OPTIONAL_KEYS = set("intervention", "round3")
+
 @https_fn.on_request(cors=enableCors)
 def createTopic(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
@@ -26,14 +35,33 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
                 "topic",
                 "aiModerationFeatures",
                 "seedViewpoints",
+                "deliberationSettings"
             ]
         )
+        
+        
         # Ensure the JSON object contains a 'topic' field
         if set(list(data.keys())) != required_keys:
             return https_fn.Response("Required keys missing in JSON object", status=400)
+        if type(data["deliberationSettings"]) is not dict:
+            return https_fn.Response("Deliberation settings incorrectly formatted.", status=400)
+        
+        finalFlow, finalTimes = list(), list()
+        for i, key in enumerate(list(OPTIONS.keys())):
+            idx = OPTIONS[key].index(data["deliberationSettings"][key]["option"])
+            if key in OPTIONAL_KEYS and idx == len(OPTIONS[key] - 1):
+                idx = -1
+            finalFlow.append(idx)
+            finalTimes.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
 
         # add the adminID field to the data
         data["adminID"] = user_id
+        
+        del data["deliberationSettings"]
+        data["delibFlow"] = finalFlow
+        data["stageTimes"] = finalTimes
+        data["currStage"] = -1
+
 
         # Initialize Firestore client
         firestore_client = firestore.client()
