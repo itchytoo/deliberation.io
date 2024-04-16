@@ -8,14 +8,6 @@ enableCors = options.CorsOptions(
         cors_methods=["get", "post"],
     )
 
-FORMATTED_OPTIONS = {
-    "round1" : "Round 1",
-    "intervention" : "Intervention",
-    "round2" : "Round 2",
-    "round3" : "Round 3"
-}
-
-STAGES = ["round1", "intervention", "round2", "round3"]
 
 @https_fn.on_request(cors=enableCors)
 def getStageInfo(req: https_fn.Request) -> https_fn.Response:
@@ -50,10 +42,10 @@ def getStageInfo(req: https_fn.Request) -> https_fn.Response:
         desiredStages = [stage for stage, choice in zip(STAGES, deliberationInfo["delibFlow"]) if choice != "None"]
         result = [
             {
-                "stageName" : FORMATTED_OPTIONS[key], 
+                "stageName" : "test", 
                 "isCurrent" : True if deliberationInfo["currStage"] == key else False
             }
-            for key in desiredStages
+            for key in deliberationInfo
         ]
         
         # Send back a message that we've successfully written the document

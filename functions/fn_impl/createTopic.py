@@ -11,10 +11,10 @@ enableCors = options.CorsOptions(
 
 NUM_OPTIONS = 5
 OPTIONS = {
-    "round1" : ["Include seed comments", "No seed comments"],
-    "intervention" : ["Socratic dialogue", "Comment feedback", "Socratic dialogue and comment feedback", "None"],
-    "round2" : ["Raw comments, randomized", "Steelman arguments, randomized", "Raw comments, ordered", "Steelman arguments, ordered"],
-    "round3" : ["Revote", "None"]
+    "Round 1" : ["Include seed comments", "No seed comments"],
+    "Intervention" : ["Socratic dialogue", "Comment feedback", "Socratic dialogue and comment feedback", "None"],
+    "Round 2" : ["Raw comments, randomized", "Steelman arguments, randomized", "Raw comments, ordered", "Steelman arguments, ordered"],
+    "Round 3" : ["Revote", "None"]
 }
 
 OPTIONAL_KEYS = set(["intervention", "round3"])
@@ -46,18 +46,22 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         if type(data["deliberationSettings"]) is not dict:
             return https_fn.Response("Deliberation settings incorrectly formatted.", status=400)
         
-        finalFlow, finalTimes = list(), list()
+        finalStageChoices, finalSelections, finalLengths = list(), list()
         for i, key in enumerate(list(OPTIONS.keys())):
-            finalFlow.append(data["deliberationSettings"][key]["option"])
-            finalTimes.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
+            if data["deliberationSettings"][key]["option"] is not None:
+                finalStageChoices.append(key)
+                finalSelections.append(data["deliberationSettings"][key]["option"])
+                finalLengths.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
 
         # add the adminID field to the data
         data["adminID"] = user_id
         
         del data["deliberationSettings"]
-        data["delibFlow"] = finalFlow
-        data["stageTimes"] = finalTimes
-        data["currStage"] = -1
+        data["stageChoices"] = ['Waiting'] + finalStageChoices
+        data["stageSelections"] = ['Waiting'] + finalSelections
+        data["stageLengths"] = ['Waiting'] + finalLengths
+        data["stageTimes"] = [1 for _ in range(len(finalStageChoices) + 1)]
+        data["currStage"] = 0
 
 
         # Initialize Firestore client
@@ -125,9 +129,7 @@ def editTopic(req: https_fn.Request) -> https_fn.Response:
         data = req.get_json()
         required_keys = set(
             [
-                "topic",
-                "seedViewpoints",
-                "deliberationSettings"
+                "deliberationDocRef"
             ]
         )
         
@@ -138,28 +140,32 @@ def editTopic(req: https_fn.Request) -> https_fn.Response:
         if type(data["deliberationSettings"]) is not dict:
             return https_fn.Response("Deliberation settings incorrectly formatted.", status=400)
         
-        finalFlow, finalTimes = list(), list()
+        finalStageChoices, finalSelections, finalLengths = list(), list()
         for i, key in enumerate(list(OPTIONS.keys())):
-            finalFlow.append(data["deliberationSettings"][key]["option"])
-            finalTimes.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
+            if data["deliberationSettings"][key]["option"] is not None:
+                finalStageChoices.append(key)
+                finalSelections.append(data["deliberationSettings"][key]["option"])
+                finalLengths.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
 
         # add the adminID field to the data
         data["adminID"] = user_id
         
-        
         del data["deliberationSettings"]
-        data["delibFlow"] = finalFlow
-        data["stageTimes"] = finalTimes
-        data["currStage"] = -1
-
+        data["stageChoices"] = ['Waiting'] + finalStageChoices
+        data["stageSelections"] = ['Waiting'] + finalSelections
+        data["stageLengths"] = ['Waiting'] + finalLengths
+        data["stageTimes"] = [float('-inf') for _ in range(len(finalStageChoices)) + 1]
+        data["currStage"] = 0
 
         # Initialize Firestore client
         firestore_client = firestore.client()
 
+
         # add the doc reference to the topic_drefs collection
-        firestore_client.collection("topic_drefs").document(data["topic"]).update(
+        firestore_client.collection("deliberations").document(data["deliberationDocRef"]).update(
             data
         )
+
 
         # Send back a message that we've successfully written the document
         return https_fn.Response(f"Topic {data['topic']} successfully updated.")

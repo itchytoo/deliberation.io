@@ -9,3 +9,7 @@ enableCors = options.CorsOptions(
     )
 
 
+https_fn.on_request(cors=enableCors)
+def allUsersDone(req: https_fn.Request) -> https_fn.Response:
+    """Take the JSON object passed to this HTTP endpoint and insert it into
+    a new document in the messages collection. Expects a POST request."""
