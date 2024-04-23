@@ -34,25 +34,27 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         required_keys = set(
             [
                 "topic",
+                "placebo",
+                "isSteelman",
                 "seedViewpoints",
                 "deliberationSettings"
             ]
         )
         
-        
+
         # Ensure the JSON object contains a 'topic' field
         if set(list(data.keys())) != required_keys:
             return https_fn.Response("Required keys missing in JSON object", status=400)
         if type(data["deliberationSettings"]) is not dict:
             return https_fn.Response("Deliberation settings incorrectly formatted.", status=400)
         
-        finalStageChoices, finalSelections, finalLengths = list(), list()
+        finalStageChoices, finalSelections, finalLengths = list(), list(), list()
         for i, key in enumerate(list(OPTIONS.keys())):
             if data["deliberationSettings"][key]["option"] is not None:
                 finalStageChoices.append(key)
                 finalSelections.append(data["deliberationSettings"][key]["option"])
                 finalLengths.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
-
+        
         # add the adminID field to the data
         data["adminID"] = user_id
         
@@ -60,7 +62,7 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         data["stageChoices"] = ['Waiting'] + finalStageChoices
         data["stageSelections"] = ['Waiting'] + finalSelections
         data["stageLengths"] = ['Waiting'] + finalLengths
-        data["stageTimes"] = [1 for _ in range(len(finalStageChoices) + 1)]
+        data["stageTimes"] = [-1000 for _ in range(len(finalStageChoices) + 1)]
         data["currStage"] = 0
 
 
@@ -129,46 +131,51 @@ def editTopic(req: https_fn.Request) -> https_fn.Response:
         data = req.get_json()
         required_keys = set(
             [
-                "deliberationDocRef"
+                "topic",
+                "placebo",
+                "isSteelman",
+                "seedViewpoints",
+                "deliberationSettings"
             ]
         )
         
-        
+
         # Ensure the JSON object contains a 'topic' field
         if set(list(data.keys())) != required_keys:
             return https_fn.Response("Required keys missing in JSON object", status=400)
         if type(data["deliberationSettings"]) is not dict:
             return https_fn.Response("Deliberation settings incorrectly formatted.", status=400)
         
-        finalStageChoices, finalSelections, finalLengths = list(), list()
+        finalStageChoices, finalSelections, finalLengths = list(), list(), list()
         for i, key in enumerate(list(OPTIONS.keys())):
             if data["deliberationSettings"][key]["option"] is not None:
                 finalStageChoices.append(key)
                 finalSelections.append(data["deliberationSettings"][key]["option"])
                 finalLengths.append(data["deliberationSettings"][key]["time"] * 1000)  # convert from seconds to milliseconds for Flutterflow widgets
-
+        
         # add the adminID field to the data
         data["adminID"] = user_id
         
         del data["deliberationSettings"]
+        del data["deliberationDocRef"]
         data["stageChoices"] = ['Waiting'] + finalStageChoices
         data["stageSelections"] = ['Waiting'] + finalSelections
         data["stageLengths"] = ['Waiting'] + finalLengths
-        data["stageTimes"] = [float('-inf') for _ in range(len(finalStageChoices)) + 1]
+        data["stageTimes"] = [-1000 for _ in range(len(finalStageChoices) + 1)]
         data["currStage"] = 0
+
 
         # Initialize Firestore client
         firestore_client = firestore.client()
 
-
-        # add the doc reference to the topic_drefs collection
+        # add the new deliberation to the collection
         firestore_client.collection("deliberations").document(data["deliberationDocRef"]).update(
             data
         )
 
 
         # Send back a message that we've successfully written the document
-        return https_fn.Response(f"Topic {data['topic']} successfully updated.")
+        return https_fn.Response(f"Topic successfully edited.")
 
     # Catch any errors that occur during the process
     except auth.InvalidIdTokenError:
