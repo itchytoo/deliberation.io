@@ -8,9 +8,6 @@ enableCors = options.CorsOptions(
         cors_methods=["get", "post"],
     )
 
-
-Experiment
-
 @https_fn.on_request(cors=enableCors)
 def getStageInfo(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
