@@ -15,3 +15,16 @@ from fn_impl.socratic import *
 initialize_app()
 
 
+exp1234567 = {
+    "Waiting Room" : "Round 1",
+    "Round 1" : "Waiting Room",
+    "Waiting Room" : "Socratic Dialogue",
+    "Socratic Dialogue" : "Waiting Room",
+    "Waiting Room" : "Round 2"
+}
+
+exp89 = {
+    "Waiting Room" : "Round 1",
+    "Round 1" : "Waiting Room",
+    "Waiting Room" : "Round 2"
+}
