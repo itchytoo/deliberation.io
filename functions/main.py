@@ -10,6 +10,7 @@ from fn_impl.round1 import *
 from fn_impl.round2 import *
 from fn_impl.admin import *
 from fn_impl.socratic import *
+from fn_impl.steelman import *
 import openai
 
 # initialize the app
