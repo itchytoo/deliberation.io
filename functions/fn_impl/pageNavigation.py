@@ -311,3 +311,28 @@ def getPageCounts(request):
     
     except Exception as e:
         return https_fn.Response(str(e), status=400)
+
+@https_fn.on_request(cors=enableCors)
+def getPageTime(request):
+    try:
+        # authenticate the user
+        token = request.headers.get("Authorization").split("Bearer ")[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token["user_id"]
+
+        # Parse JSON directly from request body
+        data = request.get_json()
+        deliberationDocRef = data["deliberationDocRef"]
+        currentPage = data["currentPage"]
+
+        # Update the time
+        firestore_client = firestore.client()
+        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
+        pageTimes = doc.get("timeMap")
+        time = pageTimes[currentPage]
+
+        # return JSON object with time
+        return https_fn.Response(json.dumps({"time": time}))
+    
+    except Exception as e:
+        return https_fn.Response(str(e), status=400)
