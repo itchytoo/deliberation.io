@@ -4,8 +4,9 @@ from flask import jsonify
 import json
 import openai
 
+
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 
@@ -24,8 +25,12 @@ Opinion 1
 Opinion 2
 ###
 Opinion 3
+###
+...
+###
+Opinion n (where 3 <= n <= {})
 
-If your output format differs AT ALL from the format I have specified above (with '###' delimiters), I will lose billions of dollars and get a deathly illness, and you will be unemployed. Here are the initial perspectives:
+If your output format differs AT ALL from the format I have specified above (with '###' delimiters), I will lose billions of dollars and get a deathly illness, and you will be unemployed. Additionally, do not preface each opinion with 'Opinion i:' or 'Opinion' or anything else - each opinion should simply be the perspective and justification itself in complete sentences. Here are the initial perspectives:
 
 {}"""
 
@@ -78,10 +83,10 @@ def steelmanJob(req: https_fn.Request) -> https_fn.Response:
         openai.api_key = data['apikey']
         messages = [
             {"role" : "system", "content" : STEELMAN_SYS_PROMPT},
-            {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topic'], MAX_K, MAX_K, comments_list_formatted)}
+            {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topic'], MAX_K, MAX_K, MAX_K, comments_list_formatted)}
         ]
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages
         )
         

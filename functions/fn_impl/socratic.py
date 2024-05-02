@@ -10,8 +10,7 @@ enableCors = options.CorsOptions(
         cors_methods=["get", "post"],
     )
 
-
-
+topic = 'Gun control'
 PROMPT = """Focus all actions and responses on addressing the user's specific needs, goals, and preferences. Employ active listening techniques to understand the user's intent and desired outcome from each interaction. Prioritize tasks and requests that benefit the user and contribute to their overall well-being. Respect user autonomy and allow users to make informed decisions about their interactions with the system.
 
 In the context of a socratic dialogue on a given topic, {}:
@@ -42,9 +41,9 @@ Example question level 1 (gentle and broad): "Why do you see universal basic inc
 Example question level 2 (moderately challenging): "Could universal basic income discourage people from working and contributing to the economy?"
 Example question level 3 (highly provocative): "Isn't it better to create jobs rather than provide universal basic income that might reduce the incentive to work?"
 
-When engaging in this socratic dialogue, use the user's initial perspective on {} as your starting point. Craft your question to match the provocation level {} with a tone similar to the corresponding example above. Aim to challenge the user to explain the foundations of their beliefs concisely and compellingly.
+When engaging in this socratic dialogue, use the user's initial perspective on {} as your starting point. Craft your question to match the provocation level {} with a tone similar to the corresponding example above. Aim to challenge the user to explain the foundations of their beliefs concisely and compellingly. Do not surround your question in quotes or any other special characters - simply ask the question as a complete sentence without any other prefixes, suffixes, or extra characters.
 
-Finally, in some cases, you may be provided not with an initial perspective, but a statement 'Ask me how I feel about {} to start us off.' You should treat these cases exactly the same, asking probing questions to dig deep and learn about the user's perspective on the topic. Here is the user's initial perspective, and your previous questions to them, if any:
+Finally, in some cases, you may be provided not with an initial perspective, but a statement 'Ask me how I feel about {} to start us off.', or simply an empty string '', or an incomplete message. In any of these cases, you should treat the EXACTLY the same, asking probing ONE PROBING QUESTION at a time to dig deep and learn about the user's perspective on the topic. In any case, you should not ask multiple questions on one turn, or attempt to complete the user's initial perspective if given an empty string. Here is the user's initial perspective (if any), and your previous questions to them (if any):
 
 {}"""
 
@@ -74,7 +73,7 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
         messages = [{"role" : role, "content" : text} for role, text in zip(data['roles'], data['texts'])]
         messages.insert(0, {
           "role" : "user",
-          "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'])  
+          "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.')  
         })
         if len(data['roles']) > 0:
             messages.append(
@@ -84,14 +83,14 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
                 }
             )
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages
         )
         del messages
         result = [{"role" : role, "text" : text} for role, text in zip(data['roles'], data['texts'])]
         0, {
           "role" : "user",
-          "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'])  
+          "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.')  
         }
         if len(data['roles']) > 0:
             result.append({
@@ -170,9 +169,13 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
         # get response conditional on conversation history
         openai.api_key = data['apikey']
         messages = [{"role" : role, "content" : text} for role, text in zip(data['roles'], data['texts'])]
+        if isPlacebo:
+            initialMessage = f"Ask me how I feel about {topic_doc['placebo']} to start us off."
+        else:
+            initialMessage = data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.'
         messages.insert(0, {
           "role" : "user",
-          "content" : PROMPT.format(topic, topic, topic, level, topic, data['initialString'] if not isPlacebo else f"Ask me how I feel about {topic_doc['placebo']} to start us off.")
+          "content" : PROMPT.format(topic, topic, topic, level, topic, initialMessage)
         })
         if len(data['roles']) > 0:
             messages.append(
@@ -182,14 +185,14 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
                 }
             )
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages
         )
         del messages
         result = [{"role" : role, "text" : text} for role, text in zip(data['roles'], data['texts'])]
         0, {
           "role" : "user",
-          "content" : PROMPT.format(topic, topic, topic, level, topic, data['initialString'] if not isPlacebo else f"Ask me how I feel about {topic_doc['placebo']} to start us off.")  
+          "content" : PROMPT.format(topic, topic, topic, level, topic, initialMessage)  
         }
         if len(data['roles']) > 0:
             result.append({
