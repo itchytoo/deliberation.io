@@ -6,7 +6,7 @@ import openai
 
 
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 
@@ -226,3 +226,4 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
 
     except ValueError:
         return https_fn.Response("No JWT token provided", status=401)
+

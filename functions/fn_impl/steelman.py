@@ -6,7 +6,7 @@ import openai
 
 
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 
@@ -55,7 +55,7 @@ def steelmanJob(req: https_fn.Request) -> https_fn.Response:
             commentID = {"userID": userID, "commentIndex": len(user_comment_dict["comments"])-1}
             commentCard = {"commentID": commentID, "commentText": commentText}
             comments_list.append(commentCard)
-        comments_list_formatted = '\n\n'.join([comment.strip() for comment in comments_list])
+        comments_list_formatted = '\n\n'.join([comment['commentText'].strip() for comment in comments_list])
         
         
          # get response conditional on conversation history
@@ -74,14 +74,38 @@ def steelmanJob(req: https_fn.Request) -> https_fn.Response:
         )
         
         result = response['choices'][0]['message']['content']
+        comments = [f"Steelman Comment {i}" for i in range(6)]
         
         
-        # UPDATE
-        docref = firestore_client.collection("deliberations").document(data["deliberationDocRef"])
-        newfielddata = {
-            "steelmannedComments" : [result]
-        }
-        docref.update(newfielddata)
+
+        # Initialize Firestore client
+        firestore_client = firestore.Client()
+
+        # Reference to the 'deliberations' collection
+        collection_ref = firestore_client.collection("deliberations")
+
+        # Specific document reference within 'deliberations' collection based on data["deliberationDocRef"]
+        doc_ref = collection_ref.document(data["deliberationDocRef"])
+
+        # Reference to the 'steelmanCommentCollection' subcollection
+        steelman_comment_collection = doc_ref.collection('steelmanCommentCollection')
+
+        # Loop through comments and add each as a new document in 'steelmanCommentCollection'
+        for i, comment in enumerate(comments):
+            # Add new comment document to 'steelmanCommentCollection'
+            new_doc_ref = steelman_comment_collection.document()
+            new_doc_ref.set({
+                'comments': [comment],
+            })
+
+            # Using the document ID from new_doc_ref, create a new user document in the 'users' collection
+            user_doc_ref = firestore_client.collection("users").document(new_doc_ref.id).set({
+                "createdDeliberations": [],
+                "participatedDeliberations": [],
+                "email": f"{new_doc_ref.id}@stanford.edu",
+                "uid": new_doc_ref.id,
+            })
+
     
         # Return the list of comments
         return https_fn.Response("Steelman job completed.")
