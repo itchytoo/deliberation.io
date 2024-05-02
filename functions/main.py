@@ -10,21 +10,24 @@ from fn_impl.round1 import *
 from fn_impl.round2 import *
 from fn_impl.admin import *
 from fn_impl.socratic import *
+import openai
 
 # initialize the app
 initialize_app()
 
 
 exp1234567 = {
-    "Waiting Room" : "Round 1",
-    "Round 1" : "Waiting Room",
-    "Waiting Room" : "Socratic Dialogue",
-    "Socratic Dialogue" : "Waiting Room",
-    "Waiting Room" : "Round 2"
+    "Homepage" : "Round 1",
+    "Round 1" : "Socratic Dialogue",
+    "Socratic Dialogue" : "Round 2"
 }
 
 exp89 = {
-    "Waiting Room" : "Round 1",
-    "Round 1" : "Waiting Room",
-    "Waiting Room" : "Round 2"
+    "Homepage" : "Round 1",
+    "Round 1" : "Round 2"
 }
+
+
+#Gated waiting room
+#Nongated waiting room (takes previous page as a param, and to find next page we map previous page to the next one in the dictionary
+# )
