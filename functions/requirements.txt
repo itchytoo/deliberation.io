@@ -1,2 +1,10 @@
 firebase_functions~=0.1.0
+<<<<<<< HEAD
 openai==0.28
+=======
+openai==0.28
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+oauth2client
+>>>>>>> 6d92daf (try pushing steelmanJob)
