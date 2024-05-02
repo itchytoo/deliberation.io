@@ -2,6 +2,8 @@ from firebase_functions import https_fn, firestore_fn, options
 from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
+import openai
+from utils import *
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -39,6 +41,10 @@ Description of what we need to implement:
     - This is so the admin can see how many users are on each page, and decide when to open the gates
 
 """
+
+
+
+
 
 @https_fn.on_request(cors=enableCors)
 def getNextPage(request):
@@ -250,7 +256,76 @@ def openGate(request):
         
         # if the gate is socraticGate or commentVotingGate, AND the job has not been run yet, then run the job, then open the gate
         if (gateName == "socratic" or gateName == "commentVoting") and not doc.get("jobRun"):
-            # TODO run the job
+            
+            try:
+                topic_doc = (
+                    firestore_client.collection("deliberations")
+                    .document(data["deliberationDocRef"])
+                    .get()
+                    .to_dict()
+                )
+                isSteelman = topic_doc['isSteelman'].strip() == 'Yes'
+                if isSteelman:
+                    # add the new deliberation to the collection
+                    user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").stream()
+                    # Get the comments from the user_comment_docs
+                    comments_list = []
+                    for user_comment_doc in user_comment_docs:
+                        user_comment_dict = user_comment_doc.to_dict()
+                        commentText = user_comment_dict["comments"][-1]
+                        userID = user_comment_doc.id
+                        commentID = {"userID": userID, "commentIndex": len(user_comment_dict["comments"])-1}
+                        commentCard = {"commentID": commentID, "commentText": commentText}
+                        comments_list.append(commentCard)
+                    comments_list_formatted = '\n\n'.join([comment['commentText'].strip() for comment in comments_list])
+                    
+                    
+                    # get response conditional on conversation history
+                    openai.api_key = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['openai_apikey']
+                    messages = [
+                        {"role" : "system", "content" : STEELMAN_SYS_PROMPT},
+                        {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topic'], MAX_K, MAX_K, MAX_K, comments_list_formatted)}
+                    ]
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=messages
+                    )
+                    
+                    result = response['choices'][0]['message']['content']
+                    #comments = [f"Steelman Comment {i}" for i in range(6)]
+                    comments = result.split('###')
+                    
+
+                    # Initialize Firestore client
+                    firestore_client = firestore.Client()
+
+                    # Reference to the 'deliberations' collection
+                    collection_ref = firestore_client.collection("deliberations")
+
+                    # Specific document reference within 'deliberations' collection based on data["deliberationDocRef"]
+                    doc_ref = collection_ref.document(data["deliberationDocRef"])
+
+                    # Reference to the 'steelmanCommentCollection' subcollection
+                    steelman_comment_collection = doc_ref.collection('steelmanCommentCollection')
+
+                    # Loop through comments and add each as a new document in 'steelmanCommentCollection'
+                    for i, comment in enumerate(comments):
+                        # Add new comment document to 'steelmanCommentCollection'
+                        new_doc_ref = steelman_comment_collection.document()
+                        new_doc_ref.set({
+                            'comments': [comment],
+                        })
+
+                        # Using the document ID from new_doc_ref, create a new user document in the 'users' collection
+                        user_doc_ref = firestore_client.collection("users").document(new_doc_ref.id).set({
+                            "createdDeliberations": [],
+                            "participatedDeliberations": [],
+                            "email": f"{new_doc_ref.id}@stanford.edu",
+                            "uid": new_doc_ref.id,
+                        })
+            except Exception as e:
+                return https_fn.Response(str(e), status=400)
+                
 
             # update the database to show that the job has been run
             firestore_client.collection("deliberations").document(deliberationDocRef).update(
