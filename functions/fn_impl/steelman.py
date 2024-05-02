@@ -10,9 +10,26 @@ enableCors = options.CorsOptions(
         cors_methods=["get", "post"],
     )
 
-
+MAX_K = 7
 STEELMAN_SYS_PROMPT = "You are helpful."
-STEELMAN_PROMPT = "How are you? {}"
+STEELMAN_PROMPT = """As a moderator in a discussion, your role is to extract the most fundamental perspectives from users' diverse opinions on the topic: {}.
+
+You must present at least 3 and no more than {} fundamental opinions—this is a strict upper limit, and the goal is to stay as close to 3 as possible. Your task is to refine each perspective into its strongest form, amalgamating similar yet slightly differing opinions into single, robust viewpoints. Ensure that each selected opinion is steelmanned, providing a tight list of perspectives, each crafted in no more than 5 sentences and no less than 3, with clear and forceful justification. That is to say, each opinion should be a few sentences, giving both the distilled opinion and a brief justification for that opinion.
+
+This task demands precision: neither exceed the minimal number needed to encapsulate the discussion's essence nor fall short by missing key perspectives. Avoid hitting the upper limit of {}. The selected perspectives must reflect your meticulous analysis and should be structured as follows:
+
+Each fundamental opinion must be separated by '###' to clearly delineate each perspective. Do not use any numbered lists or additional markers. Present the opinions as:
+
+Opinion 1
+###
+Opinion 2
+###
+Opinion 3
+
+If your output format differs AT ALL from the format I have specified above (with '###' delimiters), I will lose billions of dollars and get a deathly illness, and you will be unemployed. Here are the initial perspectives:
+
+{}"""
+
 @https_fn.on_request(cors=enableCors)
 def steelmanJob(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
@@ -60,13 +77,9 @@ def steelmanJob(req: https_fn.Request) -> https_fn.Response:
         
          # get response conditional on conversation history
         openai.api_key = data['apikey']
-        # messages = [
-        #     {"role" : "system", "content" : STEELMAN_SYS_PROMPT},
-        #     {"role" : "user", "content" : STEELMAN_PROMPT.format(comments_list_formatted)}
-        # ]
         messages = [
             {"role" : "system", "content" : STEELMAN_SYS_PROMPT},
-            {"role" : "user", "content" : STEELMAN_PROMPT.format(':)')}
+            {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topic'], MAX_K, MAX_K, comments_list_formatted)}
         ]
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -74,8 +87,8 @@ def steelmanJob(req: https_fn.Request) -> https_fn.Response:
         )
         
         result = response['choices'][0]['message']['content']
-        comments = [f"Steelman Comment {i}" for i in range(6)]
-        
+        #comments = [f"Steelman Comment {i}" for i in range(6)]
+        comments = result.split('###')
         
 
         # Initialize Firestore client
