@@ -4,7 +4,7 @@ from flask import jsonify
 import json
 
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 

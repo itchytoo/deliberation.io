@@ -4,7 +4,7 @@ from flask import jsonify
 import json
 
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 
@@ -110,6 +110,32 @@ def isFinalGateOpen(request):
     except Exception as e:
         return https_fn.Response(str(e), status=400)
 
+# lets unify the isInitialGateOpen and isFinalGateOpen into one function that takes in a gateName parameter and returns whether or not that gate is open
+
+@https_fn.on_request(cors=enableCors)
+def isGateOpen(request):
+    try:
+        # authenticate the user
+        token = request.headers.get("Authorization").split("Bearer ")[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token["user_id"]
+
+        # Parse JSON directly from request body
+        data = request.get_json()
+        deliberationDocRef = data["deliberationDocRef"]
+        gateName = data["gateName"]
+
+        # Get the gate status from the database
+        firestore_client = firestore.client()
+        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
+        gateOpen = doc.get(gateName + "GateOpen")
+
+        # return the gate status as an object with field "gateOpen"
+        return https_fn.Response(json.dumps({"gateOpen": gateOpen}))
+
+    except Exception as e:
+        return https_fn.Response(str(e), status=400)
+
 @https_fn.on_request(cors=enableCors)
 def imHere(request):
     try:
@@ -198,6 +224,55 @@ def openFinalGate(request):
     except Exception as e:
         return https_fn.Response(str(e), status=400)
 
+# I want to combine openInitialGate and openFinalGate into one function in order to make it more general. The new implementation will have 4 gates actually, not just 
+# initial and final. It will take in a gateName parameter and open the gate with that name. Then it will return what the next gate is. If the gateName is the last gate,
+# it will return "none". This will be useful for the front end to know what the next gate is.
+
+@https_fn.on_request(cors=enableCors)
+def openGate(request):
+    try:
+        # authenticate the user
+        token = request.headers.get("Authorization").split("Bearer ")[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token["user_id"]
+
+        # Parse JSON directly from request body
+        data = request.get_json()
+        deliberationDocRef = data["deliberationDocRef"]
+        gateName = data["gateName"]
+
+        # Check if the user is the admin
+        firestore_client = firestore.client()
+        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
+        adminId = doc.get("adminID")
+        if adminId != user_id:
+            return https_fn.Response("User is not the admin", status=401)
+        
+        # if the gate is socraticGate or commentVotingGate, AND the job has not been run yet, then run the job, then open the gate
+        if (gateName == "socratic" or gateName == "commentVoting") and not doc.get("jobRun"):
+            # TODO run the job
+
+            # update the database to show that the job has been run
+            firestore_client.collection("deliberations").document(deliberationDocRef).update(
+                {"socraticJobRun": True}
+            )
+            
+        # Open the gate
+        firestore_client.collection("deliberations").document(deliberationDocRef).update(
+            {gateName + "GateOpen": True}
+        )
+
+        # Get the next gate
+        nextGate = doc.get("nextGate")[gateName]
+
+        # return the next gate as an object with field "nextGate"
+        return https_fn.Response(json.dumps({"nextGate": nextGate}))
+    
+    except Exception as e:
+        return https_fn.Response(str(e), status=400)
+
+
+
 @https_fn.on_request(cors=enableCors)
 def getPageCounts(request):
     try:
@@ -217,8 +292,19 @@ def getPageCounts(request):
         if adminId != user_id:
             return https_fn.Response("User is not the admin", status=401)
         
-        # Get the page counts
+        # get the page counts
         pageCounts = doc.get("pageCounts")
+        # get the pages in the correct order
+        orderedPages = ["Initial Waiting Room", "Initial Comments", "Socratic Dialogue", "Comment Voting", "Final Waiting Room"]
+
+        # get the counts in the correct order
+        orderedCounts = []
+        for page in orderedPages:
+            if page in pageCounts:
+                orderedCounts.append(pageCounts[page])
+
+        # repack everything into the correct format
+        pageCounts = [{"page": orderedPages[i], "count": orderedCounts[i]} for i in range(len(orderedPages))]
 
         # return the page counts
         return https_fn.Response(json.dumps(pageCounts))
