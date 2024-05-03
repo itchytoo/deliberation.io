@@ -3,44 +3,47 @@ from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
 import openai
-from utils import *
+
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
         cors_methods=["get", "post"],
     )
 
+NUM_OPTIONS = 5
+OPTIONS = {
+    "round1" : ["Include seed comments", "No seed comments"],
+    "intervention" : ["Socratic dialogue", "Comment feedback", "Socratic dialogue and comment feedback", "None"],
+    "round2" : ["Raw comments, randomized", "Steelman arguments, randomized", "Raw comments, ordered", "Steelman arguments, ordered"],
+    "round3" : ["Revote", "None"]
+}
+OPTIONAL_KEYS = set(["intervention", "round3"])
 
-"""
-Description of what we need to implement:
 
-- API that takes in deliberationDocRef and currentPage, then returns next page
-    - This will be used by the front end to navigate between pages
-    - Inside our database, there will be a map from page to next page, so we can easily look up the next page
-    - This design will allow for modular changes to the order of pages
 
-- API that returns whether or not the "gate" is open for the deliberation
-    - This will be polled by the front end while the user is in the initial waiting room.
-    - It checks a boolean in the database to see if the gate is open
-    - There is a seperate API that the admin can call to open the gate
+MAX_K = 7
+STEELMAN_SYS_PROMPT = "You are helpful."
+STEELMAN_PROMPT = """As a moderator in a discussion, your role is to extract the most fundamental perspectives from users' diverse opinions on the topic: {}.
 
-- Exactly the same as above but for the final gate before the results page
+You must present at least 3 and no more than {} fundamental opinions—this is a strict upper limit, and the goal is to stay as close to 3 as possible. Your task is to refine each perspective into its strongest form, amalgamating similar yet slightly differing opinions into single, robust viewpoints. Ensure that each selected opinion is steelmanned, providing a tight list of perspectives, each crafted in no more than 5 sentences and no less than 3, with clear and forceful justification. That is to say, each opinion should be a few sentences, giving both the distilled opinion and a brief justification for that opinion.
 
-- API that takes in the current page and deliberationDocRef, and returns nothing
-    - This will be called by the front end on page load
-    - This lets the backend know that the user is on the page
-    - There will be an integer in the database that keeps track of how many users are on each page
-    - This will ultimately let the admin know how many users are on each page, so they know when to open the initial gate and the final gate
+This task demands precision: neither exceed the minimal number needed to encapsulate the discussion's essence nor fall short by missing key perspectives. Avoid hitting the upper limit of {}. The selected perspectives must reflect your meticulous analysis and should be structured as follows:
 
-- API that takes in the deliberationDocRef, checks whether or not the user is the admin, and if so, opens the gate
+Each fundamental opinion must be separated by '###' to clearly delineate each perspective. Do not use any numbered lists or additional markers. Present the opinions as:
 
-- Same as above but for the final gate
-    
-- API that takes in the deliberationDocRef, checks if the user is the admin, and if so, returns the count of users on each page
-    - This will be polled by the front end when the admin is on the dashboard page
-    - This is so the admin can see how many users are on each page, and decide when to open the gates
+Opinion 1
+###
+Opinion 2
+###
+Opinion 3
+###
+...
+###
+Opinion n (where 3 <= n <= {})
 
-"""
+If your output format differs AT ALL from the format I have specified above (with '###' delimiters), I will lose billions of dollars and get a deathly illness, and you will be unemployed. Additionally, do not preface each opinion with 'Opinion i:' or 'Opinion' or anything else - each opinion should simply be the perspective and justification itself in complete sentences. Here are the initial perspectives:
+
+{}"""
 
 
 @https_fn.on_request(cors=enableCors)
