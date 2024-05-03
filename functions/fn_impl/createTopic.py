@@ -125,6 +125,21 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         # add the new deliberation to the collection
         update_time, doc_ref = firestore_client.collection("deliberations").add(data)
 
+        # retrieve the user doc and update the createdDeliberations fields
+        user_doc = (
+            firestore_client.collection("users").document(user_id).get().to_dict()
+        )
+
+        # if the user has not created any deliberations yet, create the field
+        if "createdDeliberations" not in user_doc.keys():
+            user_doc["createdDeliberations"] = []
+            firestore_client.collection("users").document(user_id).set(user_doc)
+
+        # update the createdDeliberations field
+        firestore_client.collection("users").document(user_id).update(
+            {"createdDeliberations": user_doc["createdDeliberations"] + [doc_ref.id]}
+        )
+
         # return the deliberationDocRef to the user in a JSON object with field "deliberationDocRef". The 
         return https_fn.Response(doc_ref.id)
     
