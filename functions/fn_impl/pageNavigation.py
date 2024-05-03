@@ -43,9 +43,6 @@ Description of what we need to implement:
 """
 
 
-
-
-
 @https_fn.on_request(cors=enableCors)
 def getNextPage(request):
     try:
@@ -69,54 +66,6 @@ def getNextPage(request):
 
     except Exception as e:
         return https_fn.Response(str(e), status=400)
-
-@https_fn.on_request(cors=enableCors)
-def isInitialGateOpen(request):
-    try:
-        # authenticate the user
-        token = request.headers.get("Authorization").split("Bearer ")[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token["user_id"]
-
-        # Parse JSON directly from request body
-        data = request.get_json()
-        deliberationDocRef = data["deliberationDocRef"]
-
-        # Get the gate status from the database
-        firestore_client = firestore.client()
-        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
-        gateOpen = doc.get("initialGateOpen")
-
-        # return the gate status
-        return https_fn.Response(str(gateOpen))
-
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
-
-@https_fn.on_request(cors=enableCors)
-def isFinalGateOpen(request):
-    try:
-        # authenticate the user
-        token = request.headers.get("Authorization").split("Bearer ")[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token["user_id"]
-
-        # Parse JSON directly from request body
-        data = request.get_json()
-        deliberationDocRef = data["deliberationDocRef"]
-
-        # Get the gate status from the database
-        firestore_client = firestore.client()
-        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
-        gateOpen = doc.get("finalGateOpen")
-
-        # return the gate status
-        return https_fn.Response(str(gateOpen))
-
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
-
-# lets unify the isInitialGateOpen and isFinalGateOpen into one function that takes in a gateName parameter and returns whether or not that gate is open
 
 @https_fn.on_request(cors=enableCors)
 def isGateOpen(request):
@@ -169,70 +118,6 @@ def imHere(request):
 
     except Exception as e:
         return https_fn.Response(str(e), status=400)
-
-@https_fn.on_request(cors=enableCors)
-def openInitialGate(request):
-    try:
-        # authenticate the user
-        token = request.headers.get("Authorization").split("Bearer ")[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token["user_id"]
-
-        # Parse JSON directly from request body
-        data = request.get_json()
-        deliberationDocRef = data["deliberationDocRef"]
-
-        # Check if the user is the admin
-        firestore_client = firestore.client()
-        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
-        adminId = doc.get("adminID")
-        if adminId != user_id:
-            return https_fn.Response("User is not the admin", status=401)
-        
-        # Open the gate
-        firestore_client.collection("deliberations").document(deliberationDocRef).update(
-            {"initialGateOpen": True}
-        )
-
-        # return nothing
-        return https_fn.Response("success")
-    
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
-
-@https_fn.on_request(cors=enableCors)
-def openFinalGate(request):
-    try:
-        # authenticate the user
-        token = request.headers.get("Authorization").split("Bearer ")[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token["user_id"]
-
-        # Parse JSON directly from request body
-        data = request.get_json()
-        deliberationDocRef = data["deliberationDocRef"]
-
-        # Check if the user is the admin
-        firestore_client = firestore.client()
-        doc = firestore_client.collection("deliberations").document(deliberationDocRef).get()
-        adminId = doc.get("adminID")
-        if adminId != user_id:
-            return https_fn.Response("User is not the admin", status=401)
-        
-        # Open the gate
-        firestore_client.collection("deliberations").document(deliberationDocRef).update(
-            {"finalGateOpen": True}
-        )
-
-        # return nothing
-        return https_fn.Response("success")
-    
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
-
-# I want to combine openInitialGate and openFinalGate into one function in order to make it more general. The new implementation will have 4 gates actually, not just 
-# initial and final. It will take in a gateName parameter and open the gate with that name. Then it will return what the next gate is. If the gateName is the last gate,
-# it will return "none". This will be useful for the front end to know what the next gate is.
 
 @https_fn.on_request(cors=enableCors)
 def openGate(request):
@@ -326,7 +211,6 @@ def openGate(request):
             except Exception as e:
                 return https_fn.Response(str(e), status=400)
                 
-
             # update the database to show that the job has been run
             firestore_client.collection("deliberations").document(deliberationDocRef).update(
                 {"socraticJobRun": True}
@@ -338,15 +222,13 @@ def openGate(request):
         )
 
         # Get the next gate
-        nextGate = doc.get("nextGate")[gateName]
+        nextGate = doc.get("gateMap")[gateName]
 
         # return the next gate as an object with field "nextGate"
         return https_fn.Response(json.dumps({"nextGate": nextGate}))
     
     except Exception as e:
         return https_fn.Response(str(e), status=400)
-
-
 
 @https_fn.on_request(cors=enableCors)
 def getPageCounts(request):
