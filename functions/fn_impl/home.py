@@ -107,7 +107,7 @@ def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
                 .to_dict()
             )
             topic_list.append(
-                {"deliberationID": topic_id, "topicName": topic_doc["topic"]}
+                {"deliberationID": topic_id, "topicName": topic_doc["topicName"]}
             )
 
         # send back a JSON object with the doc references and also the topic names
@@ -169,7 +169,7 @@ def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
                 .to_dict()
             )
             topic_list.append(
-                {"deliberationID": topic_id, "topicName": topic_doc["topic"]}
+                {"deliberationID": topic_id, "topicName": topic_doc["topicName"]}
             )
 
         # send back a JSON object with the doc references and also the topic names
