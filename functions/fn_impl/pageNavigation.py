@@ -152,7 +152,7 @@ def openGate(request):
                     .get()
                     .to_dict()
                 )
-                isSteelman = topic_doc['isSteelman'].strip() == 'Yes'
+                isSteelman = topic_doc['isSteelman']
                 if isSteelman:
                     # add the new deliberation to the collection
                     user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").stream()
@@ -172,7 +172,7 @@ def openGate(request):
                     openai.api_key = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['openai_apikey']
                     messages = [
                         {"role" : "system", "content" : STEELMAN_SYS_PROMPT},
-                        {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topic'], MAX_K, MAX_K, MAX_K, comments_list_formatted)}
+                        {"role" : "user", "content" : STEELMAN_PROMPT.format(topic_doc['topicName'], MAX_K, MAX_K, MAX_K, comments_list_formatted)}
                     ]
                     response = openai.ChatCompletion.create(
                         model="gpt-4",
@@ -216,7 +216,7 @@ def openGate(request):
                 
             # update the database to show that the job has been run
             firestore_client.collection("deliberations").document(deliberationDocRef).update(
-                {"socraticJobRun": True}
+                {"jobRun": True}
             )
             
         # Open the gate
@@ -259,12 +259,14 @@ def getPageCounts(request):
 
         # get the counts in the correct order
         orderedCounts = []
+        orderedPagesReduced = []
         for page in orderedPages:
             if page in pageCounts:
                 orderedCounts.append(pageCounts[page])
+                orderedPagesReduced.append(page)
 
         # repack everything into the correct format
-        pageCounts = [{"page": orderedPages[i], "count": orderedCounts[i]} for i in range(len(orderedPages))]
+        pageCounts = [{"page": orderedPagesReduced[i], "count": orderedCounts[i]} for i in range(len(orderedCounts))]
 
         # return the page counts
         return https_fn.Response(json.dumps(pageCounts))

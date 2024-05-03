@@ -21,6 +21,11 @@ GATE_ORDER_2 = ["initial", "commentVoting", "final"]
 GATE_MAP_1 = {"initial": "socratic", "socratic": "commentVoting", "commentVoting": "final", "final": "None"}
 GATE_MAP_2 = {"initial": "commentVoting", "commentVoting": "final", "final": "None"}
 
+PAGE_MAP_1 = {"Initial Comments": "Socratic Dialogue", "Socratic Dialogue": "Comment Voting", "Comment Voting": "Final Waiting Room"}
+PAGE_MAP_2 = {"Initial Comments": "Comment Voting", "Comment Voting": "Final Waiting Room"}
+
+PAGE_COUNTS_1 = {"Initial Comments": 0, "Socratic Dialogue": 0, "Comment Voting": 0, "Final Waiting Room": 0}
+PAGE_COUNTS_2 = {"Initial Comments": 0, "Comment Voting": 0, "Final Waiting Room": 0}
 
 # this function above is disgusting. I need to change the logic anyway because we've changed the way we need to store the deliberation.
 # There's a bunch of auxillary data structures that we need to create and store in the database, eg. a page map that maps from a page to the next page
@@ -95,11 +100,16 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
             if delibSettings[key]["option"] != "None":
                 timeMap[key] = delibSettings[key]["time"] * 1000
                 pageCounts[key] = 0
-                # create the pageMap 
-                if i != len(OPTIONS) - 1:
-                    pageMap[key] = list(OPTIONS.keys())[i + 1]
-                else:
-                    pageMap[key] = "Final Waiting Room"
+        
+        # add waiting room keys initialized to 0 to the pageCounts
+        pageCounts["Final Waiting Room"] = 0
+        pageCounts["Initial Waiting Room"] = 0
+
+        # create the pageMap: either pageMap1 or pageMap2 depending the length of timeMap
+        if len(timeMap) == 3:
+            pageMap = PAGE_MAP_1
+        else:
+            pageMap = PAGE_MAP_2
         
         # create the gateMap: either gateOrder1 or gateOrder2 depending on length of pageMap
         if len(pageMap) == 3:

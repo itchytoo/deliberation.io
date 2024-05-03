@@ -160,17 +160,17 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
             .get()
             .to_dict()
         )
-        isPlacebo = len(topic_doc['placebo'].strip()) > 0
+        isPlacebo = topic_doc['isPlacebo']
         
         # if placebo given, set socratic dialogue topic to placebo; otherwise proceed normally
-        topic = topic_doc['placebo'] if isPlacebo else topic_doc['topic']
+        topic = topic_doc['placeboPrompt'] if isPlacebo else topic_doc['topicName']
         level = topic_doc['level'] if 'level' in topic_doc.keys() else 2
 
         # get response conditional on conversation history
         openai.api_key = data['apikey']
         messages = [{"role" : role, "content" : text} for role, text in zip(data['roles'], data['texts'])]
         if isPlacebo:
-            initialMessage = f"Ask me how I feel about {topic_doc['placebo']} to start us off."
+            initialMessage = f"Ask me how I feel about {topic_doc['placeboPrompt']} to start us off."
         else:
             initialMessage = data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.'
         messages.insert(0, {
