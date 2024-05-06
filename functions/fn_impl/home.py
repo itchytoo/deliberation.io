@@ -18,14 +18,17 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
 
         # Parse JSON directly from request body
         data = req.get_json()
-        deliberationDocRef = data["deliberationDocRef"]
+        required_keys = set(["topicID"])
+        # Ensure the JSON object contains a 'topic' field
+        if set(list(data.keys())) != required_keys:
+            return https_fn.Response("Required keys missing in JSON object", status=400)
 
         # Initialize Firestore client
         firestore_client = firestore.client()
 
         # retrieve the topic doc reference
         topic_lookup_ref = (
-            firestore_client.collection("deliberations").document(deliberationDocRef).get()
+            firestore_client.collection("deliberations").document(data["topicID"]).get()
         )
 
         # if the topic does not exist, return an error
@@ -46,7 +49,7 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
         firestore_client.collection("users").document(user_id).update(
             {
                 "participatedDeliberations": user_doc["participatedDeliberations"]
-                + [deliberationDocRef]
+                + [data["topicID"]]
             }
         )
 
@@ -107,7 +110,7 @@ def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
                 .to_dict()
             )
             topic_list.append(
-                {"deliberationID": topic_id, "topicName": topic_doc["topicName"]}
+                {"deliberationID": topic_id, "topicName": topic_doc["topic"]}
             )
 
         # send back a JSON object with the doc references and also the topic names
@@ -169,7 +172,7 @@ def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
                 .to_dict()
             )
             topic_list.append(
-                {"deliberationID": topic_id, "topicName": topic_doc["topicName"]}
+                {"deliberationID": topic_id, "topicName": topic_doc["topic"]}
             )
 
         # send back a JSON object with the doc references and also the topic names
