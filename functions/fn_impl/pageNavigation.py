@@ -9,7 +9,7 @@ import io
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
-
+import hashlib
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -361,17 +361,86 @@ def openGate(request):
             else:
                 raise Exception(response.text)
             
-            # Add a question with the uploaded image
+            
+            # NOTE: Question 1
+            # Add a question with the original image
             question_data = {
-                "QuestionType": "MC",
-                "QuestionText": f"This is a test question for deliberation with ID {deliberationDocRef}",
-                "Selector": "SAVR",
+                "QuestionType": "DB",
+                "QuestionText": f"Below are the results for the deliberation with ID {deliberationDocRef}. <div style='text-align: center;'><img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='max-width: 500px; height: auto;'></div><br>Above, you can see the distribution of votes from all users across commants provided during the deliberation process.",
+                "Selector": "TB",
                 "SubSelector": "TX",
-                "ChoiceOrder": ["1", "2", "3"],
-                "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='width: 100%; max-width: 500px;'>"}},
-                "Validation": { "Settings": { "ForceResponse": "ON", "Type": "None" } },
                 "Configuration": {
                     "QuestionDescriptionOption": "UseText"
+                }
+            }
+
+            questions_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/questions"
+            response = requests.post(questions_url, json=question_data, headers=headers)
+
+            if response.status_code == 200:
+                print("Question added successfully.")
+                print(response.text, '\n')
+            else:
+                raise Exception(response.text)
+            
+            
+            
+            
+            # NOTE: Question 2
+            question_data = {
+                "QuestionType": "TE",  # Text Entry
+                "QuestionText": "How did you feel about this deliberation experience overall? Please provide your feedback so we can improve future deliberation experiments.",
+                "QuestionDescription": "",  # Description for the question
+                "Selector": "SL",  # Single Line Text Entry
+                "SubSelector": "TX",  # No specific sub-selector is needed; TX is default
+                "Configuration": {
+                    "QuestionDescriptionOption": "UseText",
+                    "TextBoxSize": 50  # Configures the size of the text box; adjust as needed
+                },
+                "Validation": {
+                    "Settings": {
+                        "ForceResponse": "ON",  # Require an answer
+                        "ForceResponseType": "ON",  # Ensure the response is treated as text
+                        "Type": "None"  # No additional validation rules
+                    }
+                }
+            }
+
+
+            questions_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/questions"
+            response = requests.post(questions_url, json=question_data, headers=headers)
+
+            if response.status_code == 200:
+                print("Question added successfully.")
+                print(response.text, '\n')
+            else:
+                raise Exception(response.text)
+            
+            
+            
+             # NOTE: Question 3
+            question_data = {
+                "QuestionType": "Slider",
+                "QuestionText": "My opinions were challenged and I considered changing my mind about my initial perspective on the topic.",
+                "QuestionDescription": "Please slide the marker to indicate your level of agreement.",
+                "Selector": "HB",  # Horizontal bar slider
+                "SubSelector": "TX",  # Text sub-selector, generally not necessary for sliders but used for completeness
+                "Configuration": {
+                    "QuestionDescriptionOption": "UseText",
+                    "SliderMin": 1,  # Minimum value of the slider
+                    "SliderMax": 10,  # Maximum value of the slider
+                    "SliderStart": 5,  # Starting position of the slider
+                    "SliderStep": 1,  # Steps the slider moves in
+                    "SliderLabels": {
+                        "1": "Strongly Disagree",
+                        "10": "Strongly Agree"
+                    }  # Labels for the minimum and maximum values
+                },
+                "Validation": {
+                    "Settings": {
+                        "ForceResponse": "ON",  # Require a response
+                        "Type": "None"
+                    }
                 }
             }
             questions_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/questions"
@@ -382,6 +451,7 @@ def openGate(request):
                 print(response.text, '\n')
             else:
                 raise Exception(response.text)
+
                 
                 
             publishing_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/versions"

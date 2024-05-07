@@ -51,18 +51,50 @@ else:
     exit()
 
 # Add a question with the uploaded image
+# question_data = {
+#     "QuestionType": "MC",
+#     "QuestionText": "Something",
+#     "Selector": "SAVR",
+#     "SubSelector": "TX",
+#     "ChoiceOrder": ["1", "2", "3"],
+#     "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='width: 100%; max-width: 500px;'>"}},
+#     "Validation": { "Settings": { "ForceResponse": "ON", "Type": "None" } },
+#     "Configuration": {
+#         "QuestionDescriptionOption": "UseText"
+#     }
+# }
+
+# question_data = {
+#     "QuestionType": "MC",
+#     "QuestionText": f"Below is an image. <div style='text-align: center;'><img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='max-width: 500px; height: auto;'></div><br>What do you think about the image above?",
+#     "QuestionDescription": "Analysis of the Image",  # This is the title or description of the question
+#     "Selector": "SAVR",
+#     "SubSelector": "TX",
+#     "ChoiceOrder": ["1", "2", "3"],
+#     "Choices": {
+#         "1": {"Display": "Option 1"},
+#         "2": {"Display": "Option 2"},
+#         "3": {"Display": "Option 3"}
+#     },
+#     "Validation": {"Settings": {"ForceResponse": "ON", "Type": "None"}},
+#     "Configuration": {
+#         "QuestionDescriptionOption": "UseText"
+#     }
+# }
+
 question_data = {
-    "QuestionType": "MC",
-    "QuestionText": "Something",
-    "Selector": "SAVR",
-    "SubSelector": "TX",
-    "ChoiceOrder": ["1", "2", "3"],
-    "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='width: 100%; max-width: 500px;'>"}},
-    "Validation": { "Settings": { "ForceResponse": "ON", "Type": "None" } },
+    "QuestionType": "DB",  # Descriptive Text
+    "QuestionText": f"<div style='text-align: center;'><img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='max-width: 500px; height: auto;'></div><br>Below, you can see the distribution of votes from all users across comments provided during the deliberation process.",
+    "Selector": "TB",  # Text Box selector, not necessary but used for consistency
+    "SubSelector": "TX",  # Text selector, not necessary but used for consistency
     "Configuration": {
         "QuestionDescriptionOption": "UseText"
     }
 }
+
+
+
+
 print("JSON being sent for adding a question:", json.dumps(question_data))  # Print the JSON data
 questions_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/questions"
 response = requests.post(questions_url, json=question_data, headers=headers)

@@ -164,7 +164,7 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
         
         # if placebo given, set socratic dialogue topic to placebo; otherwise proceed normally
         topic = topic_doc['placeboPrompt'] if isPlacebo else topic_doc['topicName']
-        level = topic_doc['level'] if 'level' in topic_doc.keys() else 2
+        level = topic_doc['pushyLevel'] if 'pushyLevel' in topic_doc.keys() else 2
 
         # get response conditional on conversation history
         openai.api_key = data['apikey']
