@@ -6,7 +6,6 @@ import json
 import openai
 import pandas
 from collections import defaultdict
-import copy
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -47,10 +46,7 @@ def createQualtricsSurvey(request):
                     upvotes[key] += 1
                 elif vote_doc_dict[key][maxIndex] == -1:
                     downvotes[key] += 1
-                    
-        comments_upvotes = copy.deepcopy(upvotes)
-        comments_downvotes = copy.deepcopy(downvotes)
-        
+    
         
         # Find the union of keys from both dictionaries
         all_keys = set(upvotes.keys()).union(downvotes.keys())
@@ -59,11 +55,29 @@ def createQualtricsSurvey(request):
         for key in all_keys:
             upvotes[key]
             downvotes[key]
+        
+        
+        comment_upvotes, comment_downvotes = defaultdict(int), defaultdict(int)
+        user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").stream()
+        for comment_doc in user_comment_docs:
+            comment_doc_list = comment_doc.to_dict()[comment_type]
+            latest_comment = comment_doc_list[-1]
+            if len(latest_comment.strip()) == 0:
+                continue
+            if comment_doc.id in upvotes.keys():
+                comment_upvotes[latest_comment] = upvotes[comment_doc.id]
+                comment_downvotes[latest_comment] = downvotes[comment_doc.id]
+        
         result = {
             "upvotes" : upvotes,
-            "downvotes" : downvotes
+            "downvotes" : downvotes,
+            "commentUpvotes" : comment_upvotes,
+            "commentDownvotes" : comment_downvotes
         }
-            
+        # get response conditional on conversation history
+        apiToken = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_api_token']
+        dataCenter = "yul1"
+        library_id = "UR_8jDTL4gXw0OVIN0"
         return https_fn.Response(
             json.dumps(result), content_type="application/json"
         )
