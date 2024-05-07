@@ -6,6 +6,7 @@ import json
 import openai
 import pandas
 from collections import defaultdict
+import copy
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -34,7 +35,7 @@ def createQualtricsSurvey(request):
 
          # add the new deliberation to the collection
         user_vote_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").stream()
-        isSteelman = firestore_client.collection("deliberations").document(deliberationDocRef).get().todict()['isSteelman']
+        isSteelman = firestore_client.collection("deliberations").document(deliberationDocRef).get().to_dict()['isSteelman']
         comment_type = 'steelman' if isSteelman else 'comments'
         # Get the comments from the user_comment_docs
         upvotes, downvotes = defaultdict(int), defaultdict(int)
@@ -44,8 +45,12 @@ def createQualtricsSurvey(request):
                 maxIndex = max(list(vote_doc_dict[key].keys()))
                 if vote_doc_dict[key][maxIndex] == 1:
                     upvotes[key] += 1
-                elif vote_doc_dict[key][maxIndex] == 0:
+                elif vote_doc_dict[key][maxIndex] == -1:
                     downvotes[key] += 1
+                    
+        comments_upvotes = copy.deepcopy(upvotes)
+        comments_downvotes = copy.deepcopy(downvotes)
+        
         
         # Find the union of keys from both dictionaries
         all_keys = set(upvotes.keys()).union(downvotes.keys())
