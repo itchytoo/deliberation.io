@@ -81,6 +81,7 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         seedViewpoints = data["seedViewpoints"]
         placeboPrompt = data["placeboPrompt"]
         delibSettings = data["deliberationSettings"]
+        pushyLevel = data["pushyLevel"]
         
         # Initialize Firestore client
         firestore_client = firestore.client()
