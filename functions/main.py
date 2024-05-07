@@ -12,7 +12,6 @@ from fn_impl.admin import *
 from fn_impl.socratic import *
 from fn_impl.steelman import *
 from fn_impl.pageNavigation import *
-from fn_impl.utils import *
 import openai
 
 # initialize the app

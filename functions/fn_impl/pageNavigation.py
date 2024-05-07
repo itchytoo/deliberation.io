@@ -255,7 +255,7 @@ def getPageCounts(request):
         # get the page counts
         pageCounts = doc.get("pageCounts")
         # get the pages in the correct order
-        orderedPages = ["Initial Waiting Room", "Initial Comments", "Socratic Dialogue", "Comment Voting", "Final Waiting Room"]
+        orderedPages = ["Initial Waiting Room", "Initial Comments", "Socratic Waiting Room", "Socratic Dialogue", "Voting Waiting Room", "Comment Voting", "Final Waiting Room"]
 
         # get the counts in the correct order
         orderedCounts = []
