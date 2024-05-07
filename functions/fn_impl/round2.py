@@ -53,10 +53,13 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
             commentCard = {"commentID": commentID, "commentText": commentText}
             comments_list.append(commentCard)
     
+    
         # Return the list of comments
         return https_fn.Response(
             json.dumps(comments_list), content_type="application/json"
         )
+        
+        
         
 
     # Catch any errors that occur during the process
