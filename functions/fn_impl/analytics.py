@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import io
 import requests
+from datetime import datetime, timedelta
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -35,6 +36,13 @@ def createQualtricsSurvey(request):
         if adminId != user_id:
             return https_fn.Response("User is not the admin", status=401)
 
+
+
+
+
+
+
+
          # add the new deliberation to the collection
         user_vote_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").stream()
         isSteelman = firestore_client.collection("deliberations").document(deliberationDocRef).get().to_dict()['isSteelman']
@@ -50,7 +58,6 @@ def createQualtricsSurvey(request):
                 elif vote_doc_dict[key][maxIndex] == -1:
                     downvotes[key] += 1
     
-        
         # Find the union of keys from both dictionaries
         all_keys = set(upvotes.keys()).union(downvotes.keys())
 
@@ -58,7 +65,6 @@ def createQualtricsSurvey(request):
         for key in all_keys:
             upvotes[key]
             downvotes[key]
-        
         
         comment_upvotes, comment_downvotes = defaultdict(int), defaultdict(int)
         user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").stream()
@@ -79,33 +85,32 @@ def createQualtricsSurvey(request):
         }
         
         
-        # get response conditional on conversation history
+        
+        
+        
+        
+        
+        
+        # set qualtrics api info
         apiToken = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_api_token']
         dataCenter = "yul1"
         library_id = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_library_key']
-        # Convert dictionaries to a DataFrame
+        
+        # Create a plot
         data = pd.DataFrame({
             'Upvotes': comment_upvotes,
             'Downvotes': comment_downvotes
         })
-
-        # Create a plot
         fig, ax = plt.subplots()
-
-        # Plotting the data
-        data.plot(kind='bar', ax=ax, color={'Upvotes': 'green', 'Downvotes': 'red'})
-
-        # Adding titles and labels
+        data.plot(kind='bar', ax=ax, color={'Upvotes': '#799FCB', 'Downvotes': '#F9665E'})
         ax.set_title('Comment Upvotes and Downvotes')
         ax.set_xlabel('Comments')
         ax.set_ylabel('Number of Votes')
         
-        # Save the plot to a BytesIO object instead of a file
+        # Save the plot to a BytesIO object
         img_buf = io.BytesIO()
         plt.savefig(img_buf, format='jpeg')
         img_buf.seek(0)  # Important: move the read cursor to the start of the buffer
-        
-        # files = {'file': ('banana.jpeg', open(image_path, 'rb'), 'image/jpeg')}
         files = {'file': (f'{deliberationDocRef}.jpeg', img_buf, 'image/jpeg')}
         image_headers = {
             'Accept' : 'application/json',
@@ -114,9 +119,6 @@ def createQualtricsSurvey(request):
         }
         upload_url = f"https://{dataCenter}.qualtrics.com/API/v3/libraries/{library_id}/graphics"
         response = requests.post(upload_url, files=files, headers=image_headers)
-        print(upload_url)
-        print(files)
-        print(image_headers)
 
         if response.status_code == 200:
             graphic_id = response.json()['result']['id']
@@ -124,10 +126,109 @@ def createQualtricsSurvey(request):
         else:
             print("Failed to upload image:", response.text)
         
+        
+        
+        
+        # Create Survey
+        deliberation_doc_dict = firestore_client.collection("deliberations").document(deliberationDocRef).get().to_dict()
+        baseUrl = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions"
+        headers = {
+            "x-api-token": apiToken,
+            "content-type": "application/json",
+            "Accept": "application/json"
+        }
+        data = {"SurveyName": f"{deliberation_doc_dict['topic']}", "Language": "EN", "ProjectCategory": "CORE"}
+        response = requests.post(baseUrl, json=data, headers=headers)
+        if response.status_code == 200:
+            survey_id = response.json()['result']['SurveyID']
+            print("Survey created successfully with ID:", survey_id)
+            print(response.text, '\n')
+        else:
+            print("Failed to create survey:", response.text)
+        
+        # Add a question with the uploaded image
+        question_data = {
+            "QuestionType": "MC",
+            "QuestionText": f"This is a test question for deliberation with ID {deliberationDocRef}",
+            "Selector": "SAVR",
+            "SubSelector": "TX",
+            "ChoiceOrder": ["1", "2", "3"],
+            "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://{dataCenter}.qualtrics.com/API/v3/libraries/{library_id}/graphics' alt='description' style='width: 100%; max-width: 500px;'>"}},
+            "Validation": { "Settings": { "ForceResponse": "ON", "Type": "None" } },
+            "Configuration": {
+                "QuestionDescriptionOption": "UseText"
+            }
+        }
+        questions_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/questions"
+        response = requests.post(questions_url, json=question_data, headers=headers)
+
+        if response.status_code == 200:
+            print("Question added successfully.")
+            print(response.text, '\n')
+        else:
+            print("Failed to add question:", response.text)
+            
+            
+        publishing_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/versions"
+        publishing_headers = {
+            "Accept" : "application/json",
+            "Content-Type" : "application/json",
+            "X-API-TOKEN" : apiToken
+        }
+        survey_publishing_data = {
+            "Description" : "Testing description",
+            "Published" : True
+        }
+        response = requests.post(publishing_url, json=survey_publishing_data, headers=publishing_headers)
+        if response.status_code == 200:
+            print("Survey published successfully.")
+            print(response.text, '\n')
+        else:
+            print("Failed to publish survey:", response.text)
+
+        # Set up headers for the activation/update request
+        activation_headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-API-TOKEN": apiToken
+        }
+
+
+        # Current date and time in UTC
+        current_date = datetime.now()
+
+        # Setting start date to current date and end date to 3 years in the future
+        survey_activation_data = {
+            "name": f"{deliberation_doc_dict['topic']}",
+            "isActive": True,
+            "expiration": {
+                "startDate": current_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "endDate": (current_date + timedelta(days=3*365)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            },
+            "ownerId": "UR_8jDTL4gXw0OVIN0"
+        }
+
+
+        # URL to update the survey
+        activation_url = f"https://{dataCenter}.qualtrics.com/API/v3/surveys/{survey_id}"
+
+        # Make a PUT request to update the survey
+        response = requests.put(activation_url, json=survey_activation_data, headers=activation_headers)
+        if response.status_code == 200:
+            print("Survey updated and activated successfully.")
+            print(response.text)
+        else:
+            print("Failed to update and activate survey:", response.text)
+
+        # Print the survey link
+        survey_link = f"https://stanforduniversity.qualtrics.com/jfe/form/{survey_id}"
         return https_fn.Response(
-            json.dumps(result), content_type="application/json"
+            json.dumps({'link' : survey_link}), content_type="application/json"
         )
         
+        
+        
+        # Create survey
     # Catch any errors that occur during the process
     except auth.InvalidIdTokenError:
         return https_fn.Response("Invalid JWT token", status=401)
