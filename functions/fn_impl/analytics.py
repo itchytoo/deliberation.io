@@ -4,8 +4,11 @@ from firebase_admin import initialize_app, credentials, firestore, auth
 from flask import jsonify
 import json
 import openai
-import pandas
+import pandas as pd
+import matplotlib.pyplot as plt
 from collections import defaultdict
+import io
+import requests
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -74,10 +77,53 @@ def createQualtricsSurvey(request):
             "commentUpvotes" : comment_upvotes,
             "commentDownvotes" : comment_downvotes
         }
+        
+        
         # get response conditional on conversation history
         apiToken = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_api_token']
         dataCenter = "yul1"
-        library_id = "UR_8jDTL4gXw0OVIN0"
+        library_id = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_library_key']
+        # Convert dictionaries to a DataFrame
+        data = pd.DataFrame({
+            'Upvotes': comment_upvotes,
+            'Downvotes': comment_downvotes
+        })
+
+        # Create a plot
+        fig, ax = plt.subplots()
+
+        # Plotting the data
+        data.plot(kind='bar', ax=ax, color={'Upvotes': 'green', 'Downvotes': 'red'})
+
+        # Adding titles and labels
+        ax.set_title('Comment Upvotes and Downvotes')
+        ax.set_xlabel('Comments')
+        ax.set_ylabel('Number of Votes')
+        
+        # Save the plot to a BytesIO object instead of a file
+        img_buf = io.BytesIO()
+        plt.savefig(img_buf, format='jpeg')
+        img_buf.seek(0)  # Important: move the read cursor to the start of the buffer
+        
+        # files = {'file': ('banana.jpeg', open(image_path, 'rb'), 'image/jpeg')}
+        files = {'file': (f'{deliberationDocRef}.jpeg', img_buf, 'image/jpeg')}
+        image_headers = {
+            'Accept' : 'application/json',
+            'boundary' : '',
+            'X-API-TOKEN': apiToken
+        }
+        upload_url = f"https://{dataCenter}.qualtrics.com/API/v3/libraries/{library_id}/graphics"
+        response = requests.post(upload_url, files=files, headers=image_headers)
+        print(upload_url)
+        print(files)
+        print(image_headers)
+
+        if response.status_code == 200:
+            graphic_id = response.json()['result']['id']
+            print("Image uploaded successfully with ID:", graphic_id)
+        else:
+            print("Failed to upload image:", response.text)
+        
         return https_fn.Response(
             json.dumps(result), content_type="application/json"
         )
