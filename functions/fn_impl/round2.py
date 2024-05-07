@@ -39,7 +39,7 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
             .get()
             .to_dict()
         )
-        isSteelman = topic_doc['isSteelman'].strip() == 'Yes'
+        isSteelman = topic_doc['isSteelman']
         
         # add the new deliberation to the collection
         user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection" if not isSteelman else "steelmanCommentCollection").stream()
@@ -112,7 +112,7 @@ def sendCommentVote(req: https_fn.Request) -> https_fn.Response:
             .get()
             .to_dict()
         )
-        isSteelman = topic_doc['isSteelman'].strip() == 'Yes'
+        isSteelman = topic_doc['isSteelman']
         
 
         # add the new deliberation to the collection
@@ -163,4 +163,5 @@ def sendCommentVote(req: https_fn.Request) -> https_fn.Response:
 
     except ValueError:
         return https_fn.Response("No JWT token provided", status=401)
+
 
