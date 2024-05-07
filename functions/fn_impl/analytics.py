@@ -95,7 +95,7 @@ def createQualtricsSurvey(request):
         apiToken = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_api_token']
         dataCenter = "yul1"
         library_id = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_library_key']
-        
+        owner_id = firestore_client.collection("keys").document('APIKEYS').get().to_dict()['qualtrics_user_id']
         # Create a plot
         data = pd.DataFrame({
             'Upvotes': comment_upvotes,
@@ -205,7 +205,7 @@ def createQualtricsSurvey(request):
                 "startDate": current_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "endDate": (current_date + timedelta(days=3*365)).strftime("%Y-%m-%dT%H:%M:%SZ")
             },
-            "ownerId": "UR_8jDTL4gXw0OVIN0"
+            "ownerId": owner_id
         }
 
 
