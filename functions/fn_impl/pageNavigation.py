@@ -253,6 +253,8 @@ def openGate(request):
             # Get the comments from the user_comment_docs
             upvotes, downvotes = defaultdict(int), defaultdict(int)
             for vote_doc in user_vote_docs:
+                if comment_type not in vote_doc.to_dict().keys(): 
+                    continue
                 vote_doc_dict = vote_doc.to_dict()[comment_type]
                 for key in vote_doc_dict:
                     maxIndex = max(list(vote_doc_dict[key].keys()))
@@ -270,9 +272,9 @@ def openGate(request):
                 downvotes[key]
             
             comment_upvotes, comment_downvotes = defaultdict(int), defaultdict(int)
-            user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection").stream()
+            user_comment_docs = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("commentCollection" if not isSteelman else "steelmanCommentCollection").stream()
             for comment_doc in user_comment_docs:
-                comment_doc_list = comment_doc.to_dict()[comment_type]
+                comment_doc_list = comment_doc.to_dict()["comments"]
                 latest_comment = comment_doc_list[-1]
                 if len(latest_comment.strip()) == 0:
                     continue
@@ -305,11 +307,21 @@ def openGate(request):
                 'Downvotes': comment_downvotes
             })
             fig, ax = plt.subplots()
-            data.plot(kind='bar', ax=ax, color={'Upvotes': '#799FCB', 'Downvotes': '#F9665E'})
-            ax.set_title('Comment Upvotes and Downvotes')
-            ax.set_xlabel('Comments')
-            ax.set_ylabel('Number of Votes')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=10)
+            
+            if data.empty:
+                # If the DataFrame is empty, show an empty plot or message
+                ax.text(0.5, 0.5, 'No data to display', fontsize=12, ha='center')
+                ax.set_title('Comment Upvotes and Downvotes')
+                ax.set_xlabel('Comments')
+                ax.set_ylabel('Number of Votes')
+                ax.set_xticks([])
+                ax.set_yticks([])
+            else:
+                data.plot(kind='bar', ax=ax, color={'Upvotes': '#799FCB', 'Downvotes': '#F9665E'})
+                ax.set_title('Comment Upvotes and Downvotes')
+                ax.set_xlabel('Comments')
+                ax.set_ylabel('Number of Votes')
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=10)
             
             # Save the plot to a BytesIO object
             img_buf = io.BytesIO()
@@ -439,9 +451,26 @@ def openGate(request):
 
         # return the next gate as an object with field "nextGate"
         return https_fn.Response(json.dumps({"nextGate": nextGate}))
-    
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
+    # Catch any errors that occur during the process
+    except auth.InvalidIdTokenError:
+        return https_fn.Response("Invalid JWT token", status=401)
+
+    except auth.ExpiredIdTokenError:
+        return https_fn.Response("Expired JWT token", status=401)
+
+    except auth.RevokedIdTokenError:
+        return https_fn.Response("Revoked JWT token", status=401)
+
+    except auth.CertificateFetchError:
+        return https_fn.Response(
+            "Error fetching the public key certificates", status=401
+        )
+
+    except auth.UserDisabledError:
+        return https_fn.Response("User is disabled", status=401)
+
+    except ValueError:
+        return https_fn.Response("No JWT token provided", status=401)
 
 @https_fn.on_request(cors=enableCors)
 def getPageCounts(request):
@@ -481,8 +510,26 @@ def getPageCounts(request):
         # return the page counts
         return https_fn.Response(json.dumps(pageCounts))
     
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
+    # Catch any errors that occur during the process
+    except auth.InvalidIdTokenError:
+        return https_fn.Response("Invalid JWT token", status=401)
+
+    except auth.ExpiredIdTokenError:
+        return https_fn.Response("Expired JWT token", status=401)
+
+    except auth.RevokedIdTokenError:
+        return https_fn.Response("Revoked JWT token", status=401)
+
+    except auth.CertificateFetchError:
+        return https_fn.Response(
+            "Error fetching the public key certificates", status=401
+        )
+
+    except auth.UserDisabledError:
+        return https_fn.Response("User is disabled", status=401)
+
+    except ValueError:
+        return https_fn.Response("No JWT token provided", status=401)
 
 @https_fn.on_request(cors=enableCors)
 def getPageTime(request):
@@ -506,5 +553,23 @@ def getPageTime(request):
         # return JSON object with time
         return https_fn.Response(json.dumps({"time": time}))
     
-    except Exception as e:
-        return https_fn.Response(str(e), status=400)
+    # Catch any errors that occur during the process
+    except auth.InvalidIdTokenError:
+        return https_fn.Response("Invalid JWT token", status=401)
+
+    except auth.ExpiredIdTokenError:
+        return https_fn.Response("Expired JWT token", status=401)
+
+    except auth.RevokedIdTokenError:
+        return https_fn.Response("Revoked JWT token", status=401)
+
+    except auth.CertificateFetchError:
+        return https_fn.Response(
+            "Error fetching the public key certificates", status=401
+        )
+
+    except auth.UserDisabledError:
+        return https_fn.Response("User is disabled", status=401)
+
+    except ValueError:
+        return https_fn.Response("No JWT token provided", status=401)

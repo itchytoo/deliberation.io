@@ -122,7 +122,7 @@ def sendCommentVote(req: https_fn.Request) -> https_fn.Response:
         user_comment_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("votesCollection").document(user_id).get().to_dict()
 
         # if the user has not voted on any comments yet, create the field
-        correct_key = "comments" if not isSteelman else "steelmanComments"
+        correct_key = "comments" if not isSteelman else "steelman"
         if user_comment_doc is None:
             user_comment_doc = dict()
         if correct_key not in user_comment_doc.keys():
