@@ -101,7 +101,6 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         for i, key in enumerate(list(OPTIONS.keys())):
             if delibSettings[key]["option"] != "None":
                 timeMap[key] = delibSettings[key]["time"] * 1000
-                pageCounts[key] = 0
 
         # create the pageMap: either pageMap1 or pageMap2 depending the length of timeMap
         if len(timeMap) == 3:
