@@ -27,6 +27,7 @@ PAGE_MAP_2 = {"Initial Comments": "Comment Voting", "Comment Voting": "Final Wai
 PAGE_COUNTS_1 = {"Initial Waiting Room": 0, "Initial Comments": 0, "Socratic Waiting Room": 0, "Socratic Dialogue": 0, "Voting Waiting Room": 0, "Comment Voting": 0, "Final Waiting Room": 0}
 PAGE_COUNTS_2 = {"Initial Waiting Room": 0, "Initial Comments": 0, "Socratic Waiting Room": 0, "Voting Waiting Room": 0, "Comment Voting": 0, "Final Waiting Room": 0}
 
+PUSHY_MAP = {"Low": "1", "Medium": "2", "High": "3"}
 # this function above is disgusting. I need to change the logic anyway because we've changed the way we need to store the deliberation.
 # There's a bunch of auxillary data structures that we need to create and store in the database, eg. a page map that maps from a page to the next page
 # I'm gonna rewrite the function from scratch and clean it up a bit.
@@ -120,6 +121,10 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         else:
             pageCounts = PAGE_COUNTS_2
 
+        # convert pushyLevel to a string number
+        if pushyLevel != "null":
+            pushyLevel = PUSHY_MAP[pushyLevel]
+
         # add auxiliary data structures to the data
         data["adminID"] = user_id
         data["jobRun"] = False
@@ -134,6 +139,7 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
         data["pageCounts"] = pageCounts
         data["pageMap"] = pageMap
         data["gateMap"] = gateMap
+        data["pushyLevel"] = pushyLevel
 
         # add the new deliberation to the collection
         update_time, doc_ref = firestore_client.collection("deliberations").add(data)
