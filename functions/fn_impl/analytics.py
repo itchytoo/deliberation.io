@@ -106,9 +106,11 @@ def createQualtricsSurvey(request):
         ax.set_title('Comment Upvotes and Downvotes')
         ax.set_xlabel('Comments')
         ax.set_ylabel('Number of Votes')
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=10)
         
         # Save the plot to a BytesIO object
         img_buf = io.BytesIO()
+        plt.tight_layout()
         plt.savefig(img_buf, format='jpeg')
         img_buf.seek(0)  # Important: move the read cursor to the start of the buffer
         files = {'file': (f'{deliberationDocRef}.jpeg', img_buf, 'image/jpeg')}
@@ -124,7 +126,7 @@ def createQualtricsSurvey(request):
             graphic_id = response.json()['result']['id']
             print("Image uploaded successfully with ID:", graphic_id)
         else:
-            print("Failed to upload image:", response.text)
+            raise Exception(response.text)
         
         
         
@@ -137,14 +139,12 @@ def createQualtricsSurvey(request):
             "content-type": "application/json",
             "Accept": "application/json"
         }
-        data = {"SurveyName": f"{deliberation_doc_dict['topic']}", "Language": "EN", "ProjectCategory": "CORE"}
+        data = {"SurveyName": f"{deliberation_doc_dict['topicName']}", "Language": "EN", "ProjectCategory": "CORE"}
         response = requests.post(baseUrl, json=data, headers=headers)
         if response.status_code == 200:
             survey_id = response.json()['result']['SurveyID']
-            print("Survey created successfully with ID:", survey_id)
-            print(response.text, '\n')
         else:
-            print("Failed to create survey:", response.text)
+            raise Exception(response.text)
         
         # Add a question with the uploaded image
         question_data = {
@@ -153,7 +153,7 @@ def createQualtricsSurvey(request):
             "Selector": "SAVR",
             "SubSelector": "TX",
             "ChoiceOrder": ["1", "2", "3"],
-            "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://{dataCenter}.qualtrics.com/API/v3/libraries/{library_id}/graphics' alt='description' style='width: 100%; max-width: 500px;'>"}},
+            "Choices": { "1": { "Display": "choice 1" }, "2": { "Display": "choice 2" }, "3": {"Display": f"<img src='https://stanforduniversity.qualtrics.com/ControlPanel/Graphic.php?IM={graphic_id}' alt='description' style='width: 100%; max-width: 500px;'>"}},
             "Validation": { "Settings": { "ForceResponse": "ON", "Type": "None" } },
             "Configuration": {
                 "QuestionDescriptionOption": "UseText"
@@ -166,7 +166,7 @@ def createQualtricsSurvey(request):
             print("Question added successfully.")
             print(response.text, '\n')
         else:
-            print("Failed to add question:", response.text)
+            raise Exception(response.text)
             
             
         publishing_url = f"https://{dataCenter}.qualtrics.com/API/v3/survey-definitions/{survey_id}/versions"
@@ -184,7 +184,7 @@ def createQualtricsSurvey(request):
             print("Survey published successfully.")
             print(response.text, '\n')
         else:
-            print("Failed to publish survey:", response.text)
+            raise Exception(response.text)
 
         # Set up headers for the activation/update request
         activation_headers = {
@@ -199,7 +199,7 @@ def createQualtricsSurvey(request):
 
         # Setting start date to current date and end date to 3 years in the future
         survey_activation_data = {
-            "name": f"{deliberation_doc_dict['topic']}",
+            "name": f"{deliberation_doc_dict['topicName']}",
             "isActive": True,
             "expiration": {
                 "startDate": current_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
