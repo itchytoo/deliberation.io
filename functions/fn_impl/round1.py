@@ -65,6 +65,7 @@ def getRound1Information(req: https_fn.Request) -> https_fn.Response:
 
         massaged_doc = {
             "topicName": topic_doc["topicName"],
+            "description": topic_doc["description"],
             "yesSeeds": yesSeedList,
             "noSeeds": noSeedList,
         }
