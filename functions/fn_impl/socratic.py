@@ -75,13 +75,13 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
           "role" : "user",
           "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.')  
         })
-        if len(data['roles']) > 0:
-            messages.append(
-                {
-                    "role" : "user",
-                    "content" : data['newString']
-                }
-            )
+        # if len(data['roles']) > 0:
+        #     messages.append(
+        #         {
+        #             "role" : "user",
+        #             "content" : data['newString']
+        #         }
+        #     )
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=messages
@@ -92,11 +92,11 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
           "role" : "user",
           "content" : PROMPT.format(topic, topic, topic, 1, topic, data['initialString'] if len(data['initialString'].strip()) > 0 else 'No initial perspective given - proceed with first probing question, WITHOUT attempting to produce or say anything about the users perspective. Simply ask the question with no preface.')  
         }
-        if len(data['roles']) > 0:
-            result.append({
-                "role" : "user",
-                "text" : data["newString"]
-            })
+        # if len(data['roles']) > 0:
+        #     result.append({
+        #         "role" : "user",
+        #         "text" : data["newString"]
+        #     })
         result.append({
             "role" : "assistant",
             "text" : response['choices'][0]['message']['content']
@@ -168,7 +168,7 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
 
         # get response conditional on conversation history
         openai.api_key = data['apikey']
-        messages = [{"role" : role, "content" : text} for role, text in zip(data['roles'], data['texts'])]
+        messages = [{"role" : role.lower(), "content" : text} for role, text in zip(data['roles'][:-1], data['texts'][:-1])]
         if isPlacebo:
             initialMessage = f"Ask me how I feel about {topic_doc['placeboPrompt']} to start us off."
         else:
@@ -177,28 +177,28 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
           "role" : "user",
           "content" : PROMPT.format(topic, topic, topic, level, topic, initialMessage)
         })
-        if len(data['roles']) > 0:
-            messages.append(
-                {
-                    "role" : "user",
-                    "content" : data['newString']
-                }
-            )
+        # if len(data['roles']) > 0:
+        #     messages.append(
+        #         {
+        #             "role" : "user",
+        #             "content" : data['newString']
+        #         }
+        #     )
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=messages
         )
         del messages
-        result = [{"role" : role, "text" : text} for role, text in zip(data['roles'], data['texts'])]
+        result = [{"role" : role, "text" : text} for role, text in zip(data['roles'][:-1], data['texts'][:-1])]
         0, {
           "role" : "user",
           "content" : PROMPT.format(topic, topic, topic, level, topic, initialMessage)  
         }
-        if len(data['roles']) > 0:
-            result.append({
-                "role" : "user",
-                "text" : data["newString"]
-            })
+        # if len(data['roles']) > 0:
+        #     result.append({
+        #         "role" : "user",
+        #         "text" : data["newString"]
+        #     })
         result.append({
             "role" : "assistant",
             "text" : response['choices'][0]['message']['content']
