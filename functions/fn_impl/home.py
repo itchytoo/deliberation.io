@@ -18,17 +18,14 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
 
         # Parse JSON directly from request body
         data = req.get_json()
-        required_keys = set(["deliberationDocRef"])
-        # Ensure the JSON object contains a 'topic' field
-        if set(list(data.keys())) != required_keys:
-            return https_fn.Response("Required keys missing in JSON object", status=400)
+        deliberationDocRef = data["deliberationDocRef"].strip()
 
         # Initialize Firestore client
         firestore_client = firestore.client()
 
         # retrieve the topic doc reference
         topic_lookup_ref = (
-            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).get()
+            firestore_client.collection("deliberations").document(deliberationDocRef).get()
         )
 
         # if the topic does not exist, return an error
@@ -49,7 +46,7 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
         firestore_client.collection("users").document(user_id).update(
             {
                 "participatedDeliberations": user_doc["participatedDeliberations"]
-                + [data["deliberationDocRef"]]
+                + [deliberationDocRef]
             }
         )
 
