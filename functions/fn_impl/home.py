@@ -1,7 +1,5 @@
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
+
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -10,6 +8,9 @@ enableCors = options.CorsOptions(
 
 @https_fn.on_request(cors=enableCors)
 def joinTopic(req: https_fn.Request) -> https_fn.Response:
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]
@@ -76,6 +77,9 @@ def joinTopic(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request(cors=enableCors)
 def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]
@@ -138,6 +142,9 @@ def getCreatedTopics(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request(cors=enableCors)
 def getParticipatedTopics(req: https_fn.Request) -> https_fn.Response:
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]

@@ -1,15 +1,5 @@
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
-import openai
-import matplotlib.pyplot as plt
-from collections import defaultdict
-import io
-import requests
-from datetime import datetime, timedelta
-import pandas as pd
-import hashlib
+
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -54,6 +44,17 @@ If your output format differs AT ALL from the format I have specified above (wit
 
 @https_fn.on_request(cors=enableCors)
 def getNextPage(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]
@@ -78,6 +79,17 @@ def getNextPage(request):
 
 @https_fn.on_request(cors=enableCors)
 def isGateOpen(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]
@@ -102,6 +114,17 @@ def isGateOpen(request):
 
 @https_fn.on_request(cors=enableCors)
 def imHere(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]
@@ -132,6 +155,17 @@ def imHere(request):
 
 @https_fn.on_request(cors=enableCors)
 def openGate(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]
@@ -480,6 +514,17 @@ def openGate(request):
 
 @https_fn.on_request(cors=enableCors)
 def getPageCounts(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]
@@ -539,6 +584,17 @@ def getPageCounts(request):
 
 @https_fn.on_request(cors=enableCors)
 def getPageTime(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
+    import pandas as pd
+    import hashlib
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]

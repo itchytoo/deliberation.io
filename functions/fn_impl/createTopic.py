@@ -1,7 +1,5 @@
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
+
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -69,6 +67,9 @@ PUSHY_MAP = {"Low": "1", "Medium": "2", "High": "3"}
 
 @https_fn.on_request(cors=enableCors)
 def createTopic(req: https_fn.Request) -> https_fn.Response:
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]
@@ -170,6 +171,9 @@ def createTopic(req: https_fn.Request) -> https_fn.Response:
 def editTopic(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
     a new document in the messages collection. Expects a POST request."""
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]

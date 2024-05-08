@@ -1,15 +1,5 @@
 
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
-import openai
-import pandas as pd
-import matplotlib.pyplot as plt
-from collections import defaultdict
-import io
-import requests
-from datetime import datetime, timedelta
 
 enableCors = options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
@@ -19,6 +9,16 @@ enableCors = options.CorsOptions(
 
 @https_fn.on_request(cors=enableCors)
 def getLink(request):
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    import io
+    import requests
+    from datetime import datetime, timedelta
     try:
         # authenticate the user
         token = request.headers.get("Authorization").split("Bearer ")[1]

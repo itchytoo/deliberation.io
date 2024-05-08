@@ -1,8 +1,5 @@
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
-import openai
+
 
 
 enableCors = options.CorsOptions(
@@ -51,6 +48,10 @@ Finally, in some cases, you may be provided not with an initial perspective, but
 def getFullHistory(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
     a new document in the messages collection. Expects a POST request."""
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]
@@ -135,6 +136,10 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
 def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
     a new document in the messages collection. Expects a POST request."""
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]

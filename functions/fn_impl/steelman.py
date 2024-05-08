@@ -1,8 +1,5 @@
 from firebase_functions import https_fn, firestore_fn, options
-from firebase_admin import initialize_app, credentials, firestore, auth
-from flask import jsonify
-import json
-import openai
+
 
 
 enableCors = options.CorsOptions(
@@ -38,6 +35,10 @@ If your output format differs AT ALL from the format I have specified above (wit
 def steelmanJob(req: https_fn.Request) -> https_fn.Response:
     """Take the JSON object passed to this HTTP endpoint and insert it into
     a new document in the messages collection. Expects a POST request."""
+    from firebase_admin import initialize_app, credentials, firestore, auth
+    from flask import jsonify
+    import json
+    import openai
     # authenticate the user
     token = req.headers.get("Authorization").split("Bearer ")[1]
     decoded_token = auth.verify_id_token(token)
