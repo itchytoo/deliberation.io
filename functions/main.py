@@ -14,6 +14,7 @@ from fn_impl.steelman import *
 from fn_impl.pageNavigation import *
 from fn_impl.analytics import *
 import openai
+from firebase_admin import initialize_app
 
 # initialize the app
 initialize_app()

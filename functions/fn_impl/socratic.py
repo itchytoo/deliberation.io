@@ -3,7 +3,7 @@ from firebase_functions import https_fn, firestore_fn, options
 
 
 enableCors = options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app"],
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com", r"https://flutter\.com", r"https://deliberationio-yizum0\.flutterflow\.app", r"https://deliberationiobeta2\.flutterflow\.app", r"https://deliberation\.io"],
         cors_methods=["get", "post"],
     )
 
@@ -61,7 +61,7 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
         # Parse JSON directly from request body
         data = req.get_json()
         required_keys = set(
-            ["apikey", "roles", "texts", "newString", "initialString"]
+            ["apikey", "roles", "texts", "newString", "initialString", "deliberationDocRef"]
         )
         
         # Ensure the JSON object contains the required fields
@@ -102,7 +102,7 @@ def getFullHistory(req: https_fn.Request) -> https_fn.Response:
             "role" : "assistant",
             "text" : response['choices'][0]['message']['content']
         })
-        
+
     
         # Return the list of comments
         return https_fn.Response(
@@ -140,6 +140,7 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
     from flask import jsonify
     import json
     import openai
+    from google.api_core.exceptions import NotFound
     try:
         # authenticate the user
         token = req.headers.get("Authorization").split("Bearer ")[1]
@@ -208,7 +209,21 @@ def getFullHistoryModular(req: https_fn.Request) -> https_fn.Response:
             "role" : "assistant",
             "text" : response['choices'][0]['message']['content']
         })
-        
+
+        # update the conversation history in the collection
+        user_socratic_doc = firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("socraticCollection").document(user_id).get().to_dict()
+        if user_socratic_doc is None:
+            user_socratic_doc = dict()
+        # overwrite the previous conversation history
+        user_socratic_doc["socraticHistory"] = result
+        try:
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("socraticCollection").document(user_id).update(
+                user_socratic_doc
+            )
+        except NotFound:
+            firestore_client.collection("deliberations").document(data["deliberationDocRef"]).collection("socraticCollection").document(user_id).set(
+                user_socratic_doc
+            )  
     
         # Return the list of comments
         return https_fn.Response(
