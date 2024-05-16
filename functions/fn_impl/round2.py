@@ -52,7 +52,12 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
             commentID = {"userID": userID, "commentIndex": len(user_comment_dict["comments"])-1}
             commentCard = {"commentID": commentID, "commentText": commentText}
             comments_list.append(commentCard)
-    
+
+        # randomly sample up to 10 comments
+        import random
+        random.shuffle(comments_list)
+        if len(comments_list) > 10:
+            comments_list = comments_list[:10]
     
         # Return the list of comments
         return https_fn.Response(
@@ -60,8 +65,6 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
         )
         
         
-        
-
     # Catch any errors that occur during the process
     except auth.InvalidIdTokenError:
         return https_fn.Response("Invalid JWT token", status=401)
