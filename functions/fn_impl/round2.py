@@ -58,10 +58,27 @@ def getComments(req: https_fn.Request) -> https_fn.Response:
         random.shuffle(comments_list)
         if len(comments_list) > 10:
             comments_list = comments_list[:10]
-    
+        
+        ### REMOVE NUMBERING FROM OUTPUT COMMENTS
+        import re
+        def strip_list_prefixes(text):
+            # Define a regex pattern that matches common list item prefixes
+            pattern = r'^\s*(\d+\.\s*|\d+\)\s*|-\s*)'
+            # Use re.sub to replace the matching prefixes with an empty string
+            stripped_text = re.sub(pattern, '', text)
+            return stripped_text
+        final_comments_list = []
+        for commentCard in comments_list:
+            final_comments_list.append(
+                {
+                    'commentID': commentCard['commentID'],
+                    'commentText': strip_list_prefixes(commentCard['commentText']).strip()
+                }
+            )
+        del comments_list    
         # Return the list of comments
         return https_fn.Response(
-            json.dumps(comments_list), content_type="application/json"
+            json.dumps(final_comments_list), content_type="application/json"
         )
         
         
